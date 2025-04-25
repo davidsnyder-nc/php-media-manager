@@ -5,6 +5,11 @@
  * This file provides a direct download of the PHP Media Manager package
  */
 
+// Disable output buffering
+if (ob_get_level()) {
+    ob_end_clean();
+}
+
 // Define the path to the zip file
 $zipFile = 'dist/php-media-manager.zip';
 
@@ -15,18 +20,23 @@ if (file_exists($zipFile)) {
     
     // Set the appropriate headers for download
     header('Content-Description: File Transfer');
-    header('Content-Type: application/zip');
+    header('Content-Type: application/octet-stream');
     header('Content-Disposition: attachment; filename="php-media-manager.zip"');
     header('Content-Length: ' . $fileSize);
-    header('Cache-Control: no-cache');
+    header('Expires: 0');
+    header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
     header('Pragma: public');
     
-    // Clear output buffer
-    ob_clean();
-    flush();
-    
-    // Output the file
-    readfile($zipFile);
+    // Read the file in chunks to handle large files better
+    $handle = fopen($zipFile, 'rb');
+    if ($handle) {
+        while (!feof($handle)) {
+            $buffer = fread($handle, 1024 * 1024); // Read 1MB at a time
+            echo $buffer;
+            flush();
+        }
+        fclose($handle);
+    }
     exit;
 } else {
     // File not found
