@@ -312,19 +312,46 @@ function getSabnzbdQueue($url, $apiKey) {
 }
 
 /**
- * Get history data from SABnzbd
+ * Get history data from SABnzbd with pagination
  * 
  * @param string $url SABnzbd base URL
  * @param string $apiKey SABnzbd API key
- * @return array History data
+ * @param int $page Page number (starting at 1)
+ * @param int $limit Items per page
+ * @return array History data with pagination info
  */
-function getSabnzbdHistory($url, $apiKey) {
+function getSabnzbdHistory($url, $apiKey, $page = 1, $limit = 10) {
+    // Calculate start position
+    $start = ($page - 1) * $limit;
+    
     $response = makeApiRequest($url, 'api', [
         'mode' => 'history',
-        'output' => 'json'
+        'output' => 'json',
+        'start' => $start,
+        'limit' => $limit
     ], $apiKey);
     
-    return isset($response['history']) ? $response['history'] : [];
+    // Get total items count for pagination
+    $totalResponse = makeApiRequest($url, 'api', [
+        'mode' => 'history',
+        'output' => 'json',
+        'limit' => 1
+    ], $apiKey);
+    
+    $total = $totalResponse['history']['noofslots'] ?? 0;
+    $totalPages = ceil($total / $limit);
+    
+    $history = isset($response['history']) ? $response['history'] : [];
+    
+    // Add pagination info
+    $history['pagination'] = [
+        'current_page' => $page,
+        'total_pages' => $totalPages,
+        'total_items' => $total,
+        'items_per_page' => $limit
+    ];
+    
+    return $history;
 }
 
 /**
@@ -485,6 +512,38 @@ function formatRuntime($minutes) {
     $result .= $mins . 'm';
     
     return $result;
+}
+
+/**
+ * Search for TV shows using the Sonarr API
+ * 
+ * @param string $url Sonarr base URL
+ * @param string $apiKey Sonarr API key
+ * @param string $query The search query
+ * @return array Array of TV shows matching the search
+ */
+function searchSonarrShows($url, $apiKey, $query) {
+    if (empty($query)) {
+        return [];
+    }
+    
+    return makeApiRequest($url, 'api/v3/series/lookup', ['term' => $query], $apiKey);
+}
+
+/**
+ * Search for movies using the Radarr API
+ * 
+ * @param string $url Radarr base URL
+ * @param string $apiKey Radarr API key
+ * @param string $query The search query
+ * @return array Array of movies matching the search
+ */
+function searchRadarrMovies($url, $apiKey, $query) {
+    if (empty($query)) {
+        return [];
+    }
+    
+    return makeApiRequest($url, 'api/v3/movie/lookup', ['term' => $query], $apiKey);
 }
 
 /**

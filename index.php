@@ -25,6 +25,7 @@ if ($hasAllSettings) {
     // Get Radarr data
     if (!empty($settings['radarr_url']) && !empty($settings['radarr_api_key'])) {
         $radarrData = getRadarrOverview($settings['radarr_url'], $settings['radarr_api_key']);
+        $upcomingMovies = getUpcomingMovies($settings['radarr_url'], $settings['radarr_api_key']);
     }
 
     // Get SABnzbd data
@@ -168,28 +169,68 @@ require_once 'includes/header.php';
                 <?php if (empty($radarrData)): ?>
                     <div class="alert alert-info">No movies found or unable to connect to Radarr</div>
                 <?php else: ?>
-                    <h4>Recent Movies</h4>
-                    <div class="media-grid">
-                        <?php 
-                        $recentMovies = array_slice($radarrData, 0, 8);
-                        foreach ($recentMovies as $movie): 
-                        ?>
-                            <div class="media-item">
-                                <a href="movie_details.php?id=<?php echo $movie['id']; ?>">
-                                    <?php if (!empty($movie['images'])): ?>
-                                        <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($movie); ?>');"></div>
-                                    <?php else: ?>
-                                        <div class="media-poster no-image">
-                                            <i class="fa fa-film"></i>
-                                        </div>
-                                    <?php endif; ?>
-                                    <div class="media-title"><?php echo htmlspecialchars($movie['title']); ?></div>
-                                    <?php if (isset($movie['year'])): ?>
-                                        <div class="media-year"><?php echo $movie['year']; ?></div>
-                                    <?php endif; ?>
-                                </a>
+                    <ul class="nav nav-tabs mb-3" id="movieTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="recent-tab" data-bs-toggle="tab" data-bs-target="#recent" type="button" role="tab" aria-controls="recent" aria-selected="true">Recent</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab" aria-controls="upcoming" aria-selected="false">Upcoming</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="movieTabsContent">
+                        <div class="tab-pane fade show active" id="recent" role="tabpanel" aria-labelledby="recent-tab">
+                            <div class="media-grid">
+                                <?php 
+                                $recentMovies = array_slice($radarrData, 0, 12);
+                                foreach ($recentMovies as $movie): 
+                                ?>
+                                    <div class="media-item">
+                                        <a href="movie_details.php?id=<?php echo $movie['id']; ?>">
+                                            <?php if (!empty($movie['images'])): ?>
+                                                <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($movie); ?>');"></div>
+                                            <?php else: ?>
+                                                <div class="media-poster no-image">
+                                                    <i class="fa fa-film"></i>
+                                                </div>
+                                            <?php endif; ?>
+                                            <div class="media-title"><?php echo htmlspecialchars($movie['title']); ?></div>
+                                            <?php if (isset($movie['year'])): ?>
+                                                <div class="media-year"><?php echo $movie['year']; ?></div>
+                                            <?php endif; ?>
+                                        </a>
+                                    </div>
+                                <?php endforeach; ?>
                             </div>
-                        <?php endforeach; ?>
+                        </div>
+                        <div class="tab-pane fade" id="upcoming" role="tabpanel" aria-labelledby="upcoming-tab">
+                            <?php if (empty($upcomingMovies)): ?>
+                                <div class="alert alert-info">No upcoming movies found</div>
+                            <?php else: ?>
+                                <div class="media-grid">
+                                    <?php foreach ($upcomingMovies as $movie): ?>
+                                        <div class="media-item">
+                                            <a href="movie_details.php?id=<?php echo $movie['id']; ?>">
+                                                <?php if (!empty($movie['images'])): ?>
+                                                    <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($movie); ?>');"></div>
+                                                <?php else: ?>
+                                                    <div class="media-poster no-image">
+                                                        <i class="fa fa-film"></i>
+                                                    </div>
+                                                <?php endif; ?>
+                                                <div class="media-title"><?php echo htmlspecialchars($movie['title']); ?></div>
+                                                <div class="media-year">
+                                                    <?php if (isset($movie['inCinemas']) && !empty($movie['inCinemas'])): ?>
+                                                        <?php echo date('M j, Y', strtotime($movie['inCinemas'])); ?>
+                                                    <?php elseif (isset($movie['year'])): ?>
+                                                        <?php echo $movie['year']; ?>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 <?php endif; ?>
             </div>

@@ -15,8 +15,12 @@ if (!empty($settings['sabnzbd_url']) && !empty($settings['sabnzbd_api_key'])) {
     // Get SABnzbd queue data
     $queueData = getSabnzbdQueue($settings['sabnzbd_url'], $settings['sabnzbd_api_key']);
     
-    // Get SABnzbd history data
-    $historyData = getSabnzbdHistory($settings['sabnzbd_url'], $settings['sabnzbd_api_key']);
+    // Get current page for history pagination
+    $currentPage = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+    $itemsPerPage = 10; // Show 10 items per page
+    
+    // Get SABnzbd history data with pagination
+    $historyData = getSabnzbdHistory($settings['sabnzbd_url'], $settings['sabnzbd_api_key'], $currentPage, $itemsPerPage);
     
     // Get SABnzbd server status
     $serverStatus = getSabnzbdStatus($settings['sabnzbd_url'], $settings['sabnzbd_api_key']);
@@ -177,6 +181,76 @@ require_once 'includes/header.php';
                             </div>
                         </div>
                     <?php endforeach; ?>
+                    
+                    <?php if (isset($historyData['pagination']) && $historyData['pagination']['total_pages'] > 1): ?>
+                        <nav aria-label="History pagination" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                <?php
+                                $pagination = $historyData['pagination'];
+                                $currentPage = $pagination['current_page'];
+                                $totalPages = $pagination['total_pages'];
+                                
+                                // Previous button
+                                if ($currentPage > 1): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?view=history&page=<?php echo ($currentPage - 1); ?>">Previous</a>
+                                    </li>
+                                <?php else: ?>
+                                    <li class="page-item disabled">
+                                        <span class="page-link">Previous</span>
+                                    </li>
+                                <?php endif; 
+                                
+                                // Page numbers
+                                $startPage = max(1, $currentPage - 2);
+                                $endPage = min($totalPages, $startPage + 4);
+                                
+                                if ($startPage > 1): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?view=history&page=1">1</a>
+                                    </li>
+                                    <?php if ($startPage > 2): ?>
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    <?php endif;
+                                endif;
+                                
+                                for ($i = $startPage; $i <= $endPage; $i++): ?>
+                                    <li class="page-item <?php echo ($i == $currentPage) ? 'active' : ''; ?>">
+                                        <a class="page-link" href="?view=history&page=<?php echo $i; ?>"><?php echo $i; ?></a>
+                                    </li>
+                                <?php endfor;
+                                
+                                if ($endPage < $totalPages): 
+                                    if ($endPage < $totalPages - 1): ?>
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    <?php endif; ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?view=history&page=<?php echo $totalPages; ?>"><?php echo $totalPages; ?></a>
+                                    </li>
+                                <?php endif;
+                                
+                                // Next button
+                                if ($currentPage < $totalPages): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?view=history&page=<?php echo ($currentPage + 1); ?>">Next</a>
+                                    </li>
+                                <?php else: ?>
+                                    <li class="page-item disabled">
+                                        <span class="page-link">Next</span>
+                                    </li>
+                                <?php endif; ?>
+                            </ul>
+                        </nav>
+                        <div class="text-center text-muted mb-3">
+                            Showing <?php echo $pagination['items_per_page']; ?> items per page, 
+                            <?php echo min($pagination['items_per_page'], $pagination['total_items'] - (($pagination['current_page'] - 1) * $pagination['items_per_page'])); ?> 
+                            of <?php echo $pagination['total_items']; ?> total
+                        </div>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
         </section>
