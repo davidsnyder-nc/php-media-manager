@@ -11,6 +11,12 @@ cat > release_notes.md << EOL
 
 ## What's New
 
+- **Front Page Improvements**:
+  - Fixed "Upcoming Episodes" section to fill the entire width of its container
+  - Changed "Recently Added" tabs to show "Recently Downloaded" content
+  - Added new functions to fetch and display recently downloaded content from SABnzbd
+  - Enhanced display of downloaded TV shows and movies on front page
+
 - **User Interface Improvements**:
   - Added real-time SABnzbd queue auto-update functionality (refreshes every 10 seconds)
   - Fixed button alignment on small displays
@@ -24,12 +30,9 @@ cat > release_notes.md << EOL
   - Applied GPU acceleration hints for smoother rendering
   - Created image preloading for images that will soon enter the viewport
 
-- **Download Improvements**:
-  - Improved download package with cache directory structure
-  - Added empty cache/images directory to package for immediate use
-
 - **API Enhancements**:
   - Added new API endpoint for retrieving SABnzbd queue data
+  - Added function to get recently downloaded content from SABnzbd history
   - Improved error handling across all API endpoints
 
 ## Files
