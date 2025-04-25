@@ -18,11 +18,33 @@ $movies = [];
 if (!empty($settings['radarr_url']) && !empty($settings['radarr_api_key'])) {
     $movies = getRadarrMovies($settings['radarr_url'], $settings['radarr_api_key']);
     
-    // Apply search filter if provided
+    // Search for movies
+    $externalSearchResults = [];
     if (!empty($searchTerm)) {
-        $movies = array_filter($movies, function($movie) use ($searchTerm) {
+        // First, filter existing movies
+        $existingMovies = array_filter($movies, function($movie) use ($searchTerm) {
             return stripos($movie['title'], $searchTerm) !== false;
         });
+        
+        // Then, search for new movies via API
+        $searchResults = searchRadarrMovies($settings['radarr_url'], $settings['radarr_api_key'], $searchTerm);
+        
+        if (!empty($searchResults) && is_array($searchResults)) {
+            // Get IDs of existing movies for comparison
+            $existingIds = array_map(function($movie) {
+                return $movie['tmdbId'] ?? 0;
+            }, $movies);
+            
+            // Filter out movies that are already in library
+            $externalSearchResults = array_filter($searchResults, function($result) use ($existingIds) {
+                return !in_array($result['tmdbId'] ?? 0, $existingIds);
+            });
+            
+            // Use existing movies as the primary display list
+            $movies = $existingMovies;
+        } else {
+            $movies = $existingMovies;
+        }
     }
     
     // Apply status filter if provided
@@ -107,40 +129,83 @@ require_once 'includes/header.php';
             <p>Please configure your Radarr API settings to view movies.</p>
             <a href="settings.php" class="btn btn-primary">Go to Settings</a>
         </div>
-    <?php elseif (empty($movies)): ?>
+    <?php elseif (empty($movies) && empty($externalSearchResults)): ?>
         <div class="alert alert-info">
             <h4><i class="fa fa-info-circle"></i> No Movies Found</h4>
             <p>No movies match your criteria or there was an error connecting to Radarr.</p>
         </div>
     <?php else: ?>
-        <div class="movie-count">
-            Showing <?php echo count($movies); ?> movies
-        </div>
-        
-        <div class="media-grid">
-            <?php foreach ($movies as $movie): ?>
-                <div class="media-item">
-                    <a href="movie_details.php?id=<?php echo $movie['id']; ?>">
-                        <?php if (!empty($movie['images'])): ?>
-                            <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($movie); ?>');"></div>
-                        <?php else: ?>
-                            <div class="media-poster no-image">
-                                <i class="fa fa-film"></i>
-                            </div>
-                        <?php endif; ?>
-                        <div class="media-title"><?php echo htmlspecialchars($movie['title']); ?></div>
-                        <div class="media-info">
-                            <?php if (isset($movie['year'])): ?>
-                                <span class="media-year"><?php echo $movie['year']; ?></span>
+        <?php if (!empty($movies)): ?>
+            <div class="movie-count">
+                Showing <?php echo count($movies); ?> movies in your library
+            </div>
+            
+            <div class="media-grid">
+                <?php foreach ($movies as $movie): ?>
+                    <div class="media-item">
+                        <a href="movie_details.php?id=<?php echo $movie['id']; ?>">
+                            <?php if (!empty($movie['images'])): ?>
+                                <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($movie); ?>');"></div>
+                            <?php else: ?>
+                                <div class="media-poster no-image">
+                                    <i class="fa fa-film"></i>
+                                </div>
                             <?php endif; ?>
-                            <span class="media-status <?php echo $movie['hasFile'] ? 'downloaded' : 'missing'; ?>">
-                                <?php echo $movie['hasFile'] ? 'Downloaded' : 'Missing'; ?>
-                            </span>
+                            <div class="media-title"><?php echo htmlspecialchars($movie['title']); ?></div>
+                            <div class="media-info">
+                                <?php if (isset($movie['year'])): ?>
+                                    <span class="media-year"><?php echo $movie['year']; ?></span>
+                                <?php endif; ?>
+                                <span class="media-status <?php echo $movie['hasFile'] ? 'downloaded' : 'missing'; ?>">
+                                    <?php echo $movie['hasFile'] ? 'Downloaded' : 'Missing'; ?>
+                                </span>
+                            </div>
+                        </a>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+        
+        <?php if (!empty($externalSearchResults)): ?>
+            <div class="mt-5">
+                <h3>Available to Add</h3>
+                <p class="text-muted">The following movies are not in your library but match your search.</p>
+                
+                <div class="media-grid">
+                    <?php foreach ($externalSearchResults as $movie): ?>
+                        <div class="media-item">
+                            <div class="position-relative">
+                                <?php if (!empty($movie['images'])): ?>
+                                    <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($movie); ?>');"></div>
+                                <?php else: ?>
+                                    <div class="media-poster no-image">
+                                        <i class="fa fa-film"></i>
+                                    </div>
+                                <?php endif; ?>
+                                <form method="post" action="api.php" class="add-media-form">
+                                    <input type="hidden" name="action" value="add_movie">
+                                    <input type="hidden" name="tmdbId" value="<?php echo $movie['tmdbId'] ?? ''; ?>">
+                                    <button type="submit" class="btn btn-sm btn-success add-media-btn">
+                                        <i class="fa fa-plus"></i> Add
+                                    </button>
+                                </form>
+                                <div class="media-title"><?php echo htmlspecialchars($movie['title']); ?></div>
+                                <div class="media-info">
+                                    <?php if (isset($movie['year'])): ?>
+                                        <span class="media-year"><?php echo $movie['year']; ?></span>
+                                    <?php endif; ?>
+                                    <?php if (isset($movie['status'])): ?>
+                                        <span class="media-status <?php echo strtolower($movie['status']); ?>">
+                                            <?php echo $movie['status']; ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
                         </div>
-                    </a>
+                    <?php endforeach; ?>
                 </div>
-            <?php endforeach; ?>
-        </div>
+            </div>
+        <?php endif; ?>
     <?php endif; ?>
 </div>
 
