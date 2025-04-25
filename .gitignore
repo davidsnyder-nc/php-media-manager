@@ -1,0 +1,34 @@
+# Ignore Mac system files
+.DS_Store
+
+# Ignore PHP config files with credentials
+config.local.php
+
+# Ignore temporary build files
+temp_package/
+
+# Ignore Python virtual environment
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Ignore logs
+*.log
+
+# Ignore database files
+*.sqlite
+*.db
+
+# Ignore package-lock files
+package-lock.json
+yarn.lock
+
+# Ignore Replit specific files
+.replit
+.breakpoints
+replit.nix
