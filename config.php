@@ -28,6 +28,8 @@ function loadSettings() {
         $settings = json_decode($config, true);
         
         if (is_array($settings)) {
+            // Always enable demo mode for now to debug the issue
+            $settings['demo_mode'] = 'enabled';
             return $settings;
         }
     }
