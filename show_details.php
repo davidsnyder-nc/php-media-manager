@@ -5,6 +5,9 @@ require_once 'includes/functions.php';
 // Load settings from the config file
 $settings = loadSettings();
 
+// Check for demo mode
+$demoMode = isset($settings['demo_mode']) && $settings['demo_mode'] === 'enabled';
+
 // Get show ID from URL parameter
 $showId = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
@@ -13,14 +16,14 @@ $show = [];
 $seasons = [];
 $episodes = [];
 
-// Check if we have necessary settings and valid show ID
-if (!empty($settings['sonarr_url']) && !empty($settings['sonarr_api_key']) && $showId > 0) {
+// Check if we have necessary settings and valid show ID, or if demo mode is enabled
+if (($demoMode || (!empty($settings['sonarr_url']) && !empty($settings['sonarr_api_key']))) && $showId > 0) {
     // Get show details
-    $show = getSonarrShowDetails($settings['sonarr_url'], $settings['sonarr_api_key'], $showId);
+    $show = getSonarrShowDetails($settings['sonarr_url'], $settings['sonarr_api_key'], $showId, $demoMode);
     
     // Get show seasons and episodes
     if (!empty($show)) {
-        $episodes = getSonarrEpisodes($settings['sonarr_url'], $settings['sonarr_api_key'], $showId);
+        $episodes = getSonarrEpisodes($settings['sonarr_url'], $settings['sonarr_api_key'], $showId, $demoMode);
         
         // Organize episodes by season
         $seasons = [];
@@ -69,10 +72,10 @@ require_once 'includes/header.php';
 ?>
 
 <div class="show-details-container">
-    <?php if (empty($settings['sonarr_url']) || empty($settings['sonarr_api_key'])): ?>
+    <?php if ((empty($settings['sonarr_url']) || empty($settings['sonarr_api_key'])) && !$demoMode): ?>
         <div class="alert alert-warning">
             <h4><i class="fa fa-exclamation-triangle"></i> Configuration Required</h4>
-            <p>Please configure your Sonarr API settings to view show details.</p>
+            <p>Please configure your Sonarr API settings to view show details or enable Demo Mode in settings.</p>
             <a href="settings.php" class="btn btn-primary">Go to Settings</a>
         </div>
     <?php elseif (empty($show)): ?>
@@ -154,9 +157,11 @@ require_once 'includes/header.php';
                             </a>
                         <?php endif; ?>
                         
+                        <?php if (!$demoMode && !empty($settings['sonarr_url'])): ?>
                         <a href="<?php echo $settings['sonarr_url']; ?>/series/<?php echo $show['titleSlug']; ?>" target="_blank" class="btn btn-sm btn-outline-primary">
                             <i class="fa fa-external-link-alt"></i> Open in Sonarr
                         </a>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

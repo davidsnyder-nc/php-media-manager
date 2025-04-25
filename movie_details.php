@@ -5,16 +5,19 @@ require_once 'includes/functions.php';
 // Load settings from the config file
 $settings = loadSettings();
 
+// Check for demo mode
+$demoMode = isset($settings['demo_mode']) && $settings['demo_mode'] === 'enabled';
+
 // Get movie ID from URL parameter
 $movieId = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
 // Initialize movie data variable
 $movie = [];
 
-// Check if we have necessary settings and valid movie ID
-if (!empty($settings['radarr_url']) && !empty($settings['radarr_api_key']) && $movieId > 0) {
+// Check if we have necessary settings and valid movie ID, or if demo mode is enabled
+if (($demoMode || (!empty($settings['radarr_url']) && !empty($settings['radarr_api_key']))) && $movieId > 0) {
     // Get movie details
-    $movie = getRadarrMovieDetails($settings['radarr_url'], $settings['radarr_api_key'], $movieId);
+    $movie = getRadarrMovieDetails($settings['radarr_url'], $settings['radarr_api_key'], $movieId, $demoMode);
 }
 
 $pageTitle = !empty($movie) ? htmlspecialchars($movie['title']) : "Movie Not Found";
@@ -22,10 +25,10 @@ require_once 'includes/header.php';
 ?>
 
 <div class="movie-details-container">
-    <?php if (empty($settings['radarr_url']) || empty($settings['radarr_api_key'])): ?>
+    <?php if ((empty($settings['radarr_url']) || empty($settings['radarr_api_key'])) && !$demoMode): ?>
         <div class="alert alert-warning">
             <h4><i class="fa fa-exclamation-triangle"></i> Configuration Required</h4>
-            <p>Please configure your Radarr API settings to view movie details.</p>
+            <p>Please configure your Radarr API settings to view movie details or enable Demo Mode in settings.</p>
             <a href="settings.php" class="btn btn-primary">Go to Settings</a>
         </div>
     <?php elseif (empty($movie)): ?>
@@ -108,9 +111,11 @@ require_once 'includes/header.php';
                             </a>
                         <?php endif; ?>
                         
+                        <?php if (!$demoMode && !empty($settings['radarr_url'])): ?>
                         <a href="<?php echo $settings['radarr_url']; ?>/movie/<?php echo $movie['titleSlug']; ?>" target="_blank" class="btn btn-sm btn-outline-primary">
                             <i class="fa fa-external-link-alt"></i> Open in Radarr
                         </a>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

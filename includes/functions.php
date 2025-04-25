@@ -159,19 +159,25 @@ function getSonarrShows($url, $apiKey, $demoMode = false) {
  * 
  * @param string $url Sonarr base URL
  * @param string $apiKey Sonarr API key
- * @param int $id TV show ID
- * @return array|bool TV show details or false on failure
+ * @param int $id Show ID
+ * @param bool $demoMode Whether to use demo mode
+ * @return array|bool Show details or false on failure
  */
-function getSonarrShowDetails($url, $apiKey, $id) {
-    $shows = getSonarrShows($url, $apiKey);
+function getSonarrShowDetails($url, $apiKey, $id, $demoMode = false) {
+    $shows = getSonarrShows($url, $apiKey, $demoMode);
     if (!$shows || !is_array($shows)) {
         return false;
     }
     
     foreach ($shows as $show) {
-        if (isset($show['id']) && $show['id'] === $id) {
+        if (isset($show['id']) && (int)$show['id'] === (int)$id) {
             return $show;
         }
+    }
+    
+    // If we're in demo mode and couldn't find the show, return the first sample show
+    if ($demoMode && !empty($shows)) {
+        return $shows[0];
     }
     
     return false;
@@ -183,10 +189,63 @@ function getSonarrShowDetails($url, $apiKey, $id) {
  * @param string $url Sonarr base URL
  * @param string $apiKey Sonarr API key
  * @param int $seriesId TV show ID
+ * @param bool $demoMode Whether to use demo mode
  * @return array Array of episodes
  */
-function getSonarrEpisodes($url, $apiKey, $seriesId) {
-    return makeApiRequest($url, 'api/v3/episode', ['seriesId' => $seriesId], $apiKey);
+function getSonarrEpisodes($url, $apiKey, $seriesId, $demoMode = false) {
+    $episodes = makeApiRequest($url, 'api/v3/episode', ['seriesId' => $seriesId], $apiKey);
+    
+    if ((!$episodes || !is_array($episodes)) && $demoMode) {
+        // Generate sample episodes for the show
+        $sampleEpisodes = [];
+        $show = getSonarrShowDetails($url, $apiKey, $seriesId, true);
+        
+        if ($show) {
+            // Create episodes for each season
+            if (isset($show['seasons']) && is_array($show['seasons'])) {
+                foreach ($show['seasons'] as $season) {
+                    $seasonNumber = $season['seasonNumber'] ?? 1;
+                    $episodeCount = $season['episodeCount'] ?? 10;
+                    
+                    // Skip season 0 (specials)
+                    if ($seasonNumber > 0) {
+                        for ($i = 1; $i <= $episodeCount; $i++) {
+                            $sampleEpisodes[] = [
+                                'id' => 10000 + ($seasonNumber * 100) + $i,
+                                'seriesId' => $seriesId,
+                                'seasonNumber' => $seasonNumber,
+                                'episodeNumber' => $i,
+                                'title' => "Episode $i",
+                                'airDate' => date('Y-m-d', strtotime("-" . (($seasonNumber - 1) * 100 + $i) . " days")),
+                                'hasFile' => true,
+                                'monitored' => true
+                            ];
+                        }
+                    }
+                }
+            } else {
+                // If no seasons info, create default seasons and episodes
+                for ($season = 1; $season <= 3; $season++) {
+                    for ($episode = 1; $episode <= 10; $episode++) {
+                        $sampleEpisodes[] = [
+                            'id' => 10000 + ($season * 100) + $episode,
+                            'seriesId' => $seriesId,
+                            'seasonNumber' => $season,
+                            'episodeNumber' => $episode,
+                            'title' => "Episode $episode",
+                            'airDate' => date('Y-m-d', strtotime("-" . (($season - 1) * 100 + $episode) . " days")),
+                            'hasFile' => true,
+                            'monitored' => true
+                        ];
+                    }
+                }
+            }
+        }
+        
+        return $sampleEpisodes;
+    }
+    
+    return $episodes ?: [];
 }
 
 /**
@@ -327,18 +386,24 @@ function getRadarrMovies($url, $apiKey, $demoMode = false) {
  * @param string $url Radarr base URL
  * @param string $apiKey Radarr API key
  * @param int $id Movie ID
+ * @param bool $demoMode Whether to use demo mode
  * @return array|bool Movie details or false on failure
  */
-function getRadarrMovieDetails($url, $apiKey, $id) {
-    $movies = getRadarrMovies($url, $apiKey);
+function getRadarrMovieDetails($url, $apiKey, $id, $demoMode = false) {
+    $movies = getRadarrMovies($url, $apiKey, $demoMode);
     if (!$movies || !is_array($movies)) {
         return false;
     }
     
     foreach ($movies as $movie) {
-        if (isset($movie['id']) && $movie['id'] === $id) {
+        if (isset($movie['id']) && (int)$movie['id'] === (int)$id) {
             return $movie;
         }
+    }
+    
+    // If we're in demo mode and couldn't find the movie, return the first sample movie
+    if ($demoMode && !empty($movies)) {
+        return $movies[0];
     }
     
     return false;
@@ -1139,42 +1204,91 @@ function getSampleUpcomingEpisodes() {
     $today = new DateTime();
     $episodes = [];
     
-    // Add sample episodes for the next 7 days
-    for ($i = 0; $i < 10; $i++) {
-        $date = clone $today;
-        $date->modify('+' . rand(0, 7) . ' days');
-        
-        // Randomly pick a show
-        $showId = rand(1, 6);
-        $showTitle = '';
-        
-        switch ($showId) {
-            case 1: $showTitle = 'Stranger Things'; break;
-            case 2: $showTitle = 'The Mandalorian'; break;
-            case 3: $showTitle = 'Breaking Bad'; break;
-            case 4: $showTitle = 'The Office'; break;
-            case 5: $showTitle = 'The Last of Us'; break;
-            case 6: $showTitle = 'Game of Thrones'; break;
+    // Sample shows with their data
+    $shows = [
+        [
+            'id' => 1,
+            'title' => 'Stranger Things',
+            'season' => 5,
+            'episodes' => 8,
+            'image' => 'https://image.tmdb.org/t/p/original/49WJfeN0moxb9IPfGn8AIqMGskD.jpg'
+        ],
+        [
+            'id' => 2,
+            'title' => 'The Mandalorian',
+            'season' => 4,
+            'episodes' => 10,
+            'image' => 'https://image.tmdb.org/t/p/original/sWgBv7LV2PRoQgkxwlibdGXKz1S.jpg'
+        ],
+        [
+            'id' => 3,
+            'title' => 'Ted Lasso',
+            'season' => 3,
+            'episodes' => 12,
+            'image' => 'https://image.tmdb.org/t/p/original/oX7QdfiQEbyvIvpKgJHRCgbrLdK.jpg'
+        ],
+        [
+            'id' => 4,
+            'title' => 'The Last of Us',
+            'season' => 2,
+            'episodes' => 10, 
+            'image' => 'https://image.tmdb.org/t/p/original/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg'
+        ],
+        [
+            'id' => 5,
+            'title' => 'The Boys',
+            'season' => 4,
+            'episodes' => 8,
+            'image' => 'https://image.tmdb.org/t/p/original/stTEycfG9928HYGEISBFaG1ngjM.jpg'
+        ],
+        [
+            'id' => 6,
+            'title' => 'House of the Dragon',
+            'season' => 2,
+            'episodes' => 10,
+            'image' => 'https://image.tmdb.org/t/p/original/xiB0hsxMpgvEWsABtJucmkECekZ.jpg'
+        ]
+    ];
+    
+    // Add sample episodes for the next 14 days
+    for ($i = 0; $i < 15; $i++) {
+        // Create a more realistic lineup - not all shows air every day
+        if ($i % 2 == 0) {
+            // Skip days to make it more realistic
+            continue;
         }
         
+        $date = clone $today;
+        $date->modify('+' . $i . ' days');
+        
+        // Get a random show from our list
+        $showIndex = rand(0, count($shows) - 1);
+        $show = $shows[$showIndex];
+        
         // Create episode info
-        $season = rand(1, 4);
-        $episode = rand(1, 10);
+        $season = $show['season'];
+        $episode = rand(1, $show['episodes']);
         
         $episodes[] = [
             'id' => 1000 + $i,
-            'seriesId' => $showId,
+            'seriesId' => $show['id'],
             'episodeNumber' => $episode,
             'seasonNumber' => $season,
             'title' => 'Episode ' . $episode,
             'airDate' => $date->format('Y-m-d'),
             'airDateUtc' => $date->format('Y-m-d\TH:i:s\Z'),
             'series' => [
-                'id' => $showId,
-                'title' => $showTitle,
-                'status' => ($showId % 2 == 0) ? 'continuing' : 'ended'
+                'id' => $show['id'],
+                'title' => $show['title'],
+                'status' => 'continuing',
+                'images' => [
+                    [
+                        'coverType' => 'poster',
+                        'remoteUrl' => $show['image']
+                    ]
+                ]
             ],
-            'seriesTitle' => $showTitle
+            'seriesTitle' => $show['title']
         ];
     }
     
@@ -1538,4 +1652,198 @@ function getSampleSabnzbdHistory($limit = 10) {
         'noofslots' => count($slots),
         'noofslots_total' => $limit,
     ];
+}
+
+/**
+ * Process recent downloads to match with show/movie metadata
+ * 
+ * @param array $downloads The download history items
+ * @param array $shows The TV shows data
+ * @param array $movies The movies data 
+ * @param bool $demoMode Whether to use demo mode
+ * @return array Processed download items with metadata
+ */
+function processRecentDownloads($downloads, $shows, $movies, $demoMode = false) {
+    // If demo mode is enabled and there are no downloads, generate sample data
+    if ($demoMode && empty($downloads)) {
+        $downloads = getSampleDownloadHistory();
+    }
+    
+    // If still no downloads or no metadata, return empty array
+    if (empty($downloads) || (empty($shows) && empty($movies))) {
+        return [];
+    }
+    
+    // Use the processor class to match downloads with their content
+    $processor = new RecentDownloadsProcessor($downloads, $shows, $movies);
+    return $processor->getProcessedDownloads();
+}
+
+/**
+ * Class to process recent download content for demo mode
+ */
+class RecentDownloadsProcessor {
+    private $downloads;
+    private $shows;
+    private $movies;
+    private $processedDownloads = [];
+    private $tvShowsByName = [];
+    private $moviesByName = [];
+    
+    /**
+     * Constructor
+     * 
+     * @param array $downloads The download history items
+     * @param array $shows The TV shows data
+     * @param array $movies The movies data
+     */
+    public function __construct($downloads, $shows, $movies) {
+        $this->downloads = $downloads;
+        $this->shows = $shows;
+        $this->movies = $movies;
+        $this->processDownloads();
+    }
+    
+    /**
+     * Process the downloads and match them with shows/movies
+     */
+    private function processDownloads() {
+        foreach ($this->downloads as $download) {
+            // Ensure download has a type
+            if (!isset($download['type'])) {
+                // Determine content type from category
+                $type = 'other';
+                if (isset($download['category'])) {
+                    $category = strtolower($download['category']);
+                    if (strpos($category, 'tv') !== false || strpos($category, 'show') !== false || strpos($category, 'series') !== false) {
+                        $type = 'tv';
+                    } elseif (strpos($category, 'movie') !== false || strpos($category, 'film') !== false) {
+                        $type = 'movie';
+                    }
+                }
+                $download['type'] = $type;
+            }
+            
+            // Process based on content type
+            if ($download['type'] === 'tv') {
+                $this->processTvShow($download);
+            } elseif ($download['type'] === 'movie') {
+                $this->processMovie($download);
+            } else {
+                $this->processedDownloads[] = $download;
+            }
+        }
+        
+        // Combine and sort the processed downloads
+        $this->finalizeProcessing();
+    }
+    
+    /**
+     * Process a TV show download
+     * 
+     * @param array $download The download item
+     */
+    private function processTvShow($download) {
+        $name = $download['name'];
+        
+        // Try to match "Show.Name.S01E01" or "Show.Name.1x01"
+        if (preg_match('/^(.*?)[\.|\s][sS](\d+)[eE](\d+)/', $name, $matches) || 
+            preg_match('/^(.*?)[\.|\s](\d+)x(\d+)/', $name, $matches)) {
+            $showName = trim(str_replace(['.', '_'], ' ', $matches[1]));
+            $season = intval($matches[2]);
+            $episode = intval($matches[3]);
+            
+            // Try to find the show in sample data
+            foreach ($this->shows as $show) {
+                $showTitle = strtolower(trim($show['title']));
+                $matchShowName = strtolower($showName);
+                
+                if ($showTitle === $matchShowName || 
+                    strpos($showTitle, $matchShowName) === 0 || 
+                    strpos($matchShowName, $showTitle) === 0) {
+                    
+                    // If we haven't seen this show before, or this is a newer download
+                    if (!isset($this->tvShowsByName[$showTitle]) || 
+                        strtotime($download['completed']) > strtotime($this->tvShowsByName[$showTitle]['completed'])) {
+                        
+                        $this->tvShowsByName[$showTitle] = $download;
+                        $this->tvShowsByName[$showTitle]['clean_name'] = $show['title'];
+                        $this->tvShowsByName[$showTitle]['show_id'] = $show['id'];
+                        $this->tvShowsByName[$showTitle]['season'] = $season;
+                        $this->tvShowsByName[$showTitle]['episode'] = $episode;
+                        $this->tvShowsByName[$showTitle]['image'] = isset($show['images']) ? getPosterUrl($show['images']) : '';
+                        $this->tvShowsByName[$showTitle]['episodes_count'] = 1;
+                    } else {
+                        // Increment episode count for existing show
+                        $this->tvShowsByName[$showTitle]['episodes_count']++;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    
+    /**
+     * Process a movie download
+     * 
+     * @param array $download The download item
+     */
+    private function processMovie($download) {
+        $name = $download['name'];
+        
+        // Try to clean up movie name using common patterns
+        if (preg_match('/^(.*?)[\.\s]\d{4}/', $name, $matches)) {
+            $movieName = trim(str_replace(['.', '_'], ' ', $matches[1]));
+            
+            // Try to find movie in sample data
+            foreach ($this->movies as $movie) {
+                $movieTitle = strtolower(trim($movie['title']));
+                $matchMovieName = strtolower($movieName);
+                
+                if ($movieTitle === $matchMovieName || 
+                    strpos($movieTitle, $matchMovieName) === 0 || 
+                    strpos($matchMovieName, $movieTitle) === 0) {
+                    
+                    $download['clean_name'] = $movie['title'];
+                    $download['movie_id'] = $movie['id'];
+                    $download['image'] = isset($movie['images']) ? getPosterUrl($movie['images']) : '';
+                    $download['year'] = isset($movie['year']) ? $movie['year'] : '';
+                    
+                    $this->moviesByName[$movieTitle] = $download;
+                    break;
+                }
+            }
+        }
+        
+        // If we couldn't match the movie, still add it with original name
+        if (!isset($download['clean_name'])) {
+            $this->processedDownloads[] = $download;
+        }
+    }
+    
+    /**
+     * Finalize processing by combining and sorting downloads
+     */
+    private function finalizeProcessing() {
+        // Combine processed downloads
+        $this->processedDownloads = array_merge(
+            $this->processedDownloads, 
+            array_values($this->tvShowsByName), 
+            array_values($this->moviesByName)
+        );
+        
+        // Sort by completed date (newest first)
+        usort($this->processedDownloads, function($a, $b) {
+            return strtotime($b['completed']) - strtotime($a['completed']);
+        });
+    }
+    
+    /**
+     * Get the processed downloads
+     * 
+     * @return array The processed downloads
+     */
+    public function getProcessedDownloads() {
+        return $this->processedDownloads;
+    }
 }

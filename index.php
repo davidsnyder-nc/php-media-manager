@@ -39,27 +39,55 @@ $hasAllSettings = (!empty($settings['sonarr_url']) && !empty($settings['sonarr_a
 if ($hasAllSettings) {
     // Get Sonarr data
     if (!empty($settings['sonarr_url']) && !empty($settings['sonarr_api_key'])) {
-        $sonarrData = getSonarrOverview($settings['sonarr_url'], $settings['sonarr_api_key']);
+        $sonarrData = getSonarrOverview($settings['sonarr_url'], $settings['sonarr_api_key'], $demoMode);
+    } elseif ($demoMode) {
+        $sonarrData = getSampleSonarrShows();
     }
 
     // Get Radarr data
     if (!empty($settings['radarr_url']) && !empty($settings['radarr_api_key'])) {
-        $radarrData = getRadarrOverview($settings['radarr_url'], $settings['radarr_api_key']);
-        $upcomingMovies = getUpcomingMovies($settings['radarr_url'], $settings['radarr_api_key']);
+        $radarrData = getRadarrOverview($settings['radarr_url'], $settings['radarr_api_key'], $demoMode);
+        $upcomingMovies = getUpcomingMovies($settings['radarr_url'], $settings['radarr_api_key'], $demoMode);
+    } elseif ($demoMode) {
+        // In demo mode, get sample movie data
+        $radarrData = getSampleMovies();
+        $upcomingMovies = getSampleUpcomingMovies();
+    } else {
+        $radarrData = [];
+        $upcomingMovies = [];
     }
 
     // Get SABnzbd data
     if (!empty($settings['sabnzbd_url']) && !empty($settings['sabnzbd_api_key'])) {
-        $sabnzbdData = getSabnzbdQueue($settings['sabnzbd_url'], $settings['sabnzbd_api_key']);
-        $recentDownloads = getRecentlyDownloadedContent(
-            $settings['sabnzbd_url'], 
-            $settings['sabnzbd_api_key'], 
-            12,
-            $settings['sonarr_url'] ?? '', 
-            $settings['sonarr_api_key'] ?? '',
-            $settings['radarr_url'] ?? '', 
-            $settings['radarr_api_key'] ?? ''
+        $sabnzbdData = getSabnzbdQueue($settings['sabnzbd_url'], $settings['sabnzbd_api_key'], $demoMode);
+        
+        // Get download history
+        $downloadHistory = getSabnzbdHistory($settings['sabnzbd_url'], $settings['sabnzbd_api_key'], 12, $demoMode);
+        $historySlots = isset($downloadHistory['slots']) ? $downloadHistory['slots'] : [];
+        
+        // Process the recent downloads to match with shows/movies
+        $recentDownloads = processRecentDownloads(
+            $historySlots,
+            $sonarrData,
+            $radarrData,
+            $demoMode
         );
+    } elseif ($demoMode) {
+        $sabnzbdData = getSampleSabnzbdQueue();
+        
+        // In demo mode, get sample data for shows, movies, and download history
+        $demoHistory = getSampleSabnzbdHistory(12);
+        $historySlots = isset($demoHistory['slots']) ? $demoHistory['slots'] : [];
+        
+        // Process the recent downloads using our sample data
+        $recentDownloads = processRecentDownloads(
+            $historySlots,
+            $sonarrData,
+            $radarrData,
+            true // force demo mode
+        );
+    } else {
+        $recentDownloads = [];
     }
 }
 
@@ -152,7 +180,7 @@ require_once 'includes/header.php';
                     <div class="tab-content" id="showTabsContent">
                         <div class="tab-pane fade show active" id="episodes" role="tabpanel" aria-labelledby="episodes-tab">
                             <?php
-                            $upcomingEpisodes = getUpcomingEpisodes($settings['sonarr_url'], $settings['sonarr_api_key']);
+                            $upcomingEpisodes = getUpcomingEpisodes($settings['sonarr_url'], $settings['sonarr_api_key'], $demoMode);
                             if (empty($upcomingEpisodes)): 
                             ?>
                                 <div class="alert alert-info">No upcoming episodes</div>
