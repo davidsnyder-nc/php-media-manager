@@ -349,11 +349,15 @@ function getRadarrMovieDetails($url, $apiKey, $id) {
  * 
  * @param string $url Radarr base URL
  * @param string $apiKey Radarr API key
+ * @param bool $demoMode Whether to use demo data when API is unavailable
  * @return array Array of upcoming movies
  */
-function getUpcomingMovies($url, $apiKey) {
-    $movies = getRadarrMovies($url, $apiKey);
-    if (!$movies || !is_array($movies)) {
+function getUpcomingMovies($url, $apiKey, $demoMode = false) {
+    $movies = getRadarrMovies($url, $apiKey, $demoMode);
+    if ((!$movies || !is_array($movies)) && $demoMode) {
+        // Use demo data if API request failed and demo mode is enabled
+        return getSampleUpcomingMovies();
+    } elseif (!$movies || !is_array($movies)) {
         return [];
     }
     
@@ -386,13 +390,19 @@ function getUpcomingMovies($url, $apiKey) {
  * 
  * @param string $url SABnzbd base URL
  * @param string $apiKey SABnzbd API key
+ * @param bool $demoMode Whether to use demo data when API is unavailable
  * @return array Queue data
  */
-function getSabnzbdQueue($url, $apiKey) {
+function getSabnzbdQueue($url, $apiKey, $demoMode = false) {
     $response = makeApiRequest($url, 'api', [
         'mode' => 'queue',
         'output' => 'json'
     ], $apiKey);
+    
+    if ((!isset($response['queue']) || empty($response['queue'])) && $demoMode) {
+        // Use demo data if API request failed and demo mode is enabled
+        return getSampleSabnzbdQueue();
+    }
     
     return isset($response['queue']) ? $response['queue'] : [];
 }
@@ -404,9 +414,10 @@ function getSabnzbdQueue($url, $apiKey) {
  * @param string $apiKey SABnzbd API key
  * @param int $page Page number (starting at 1)
  * @param int $limit Items per page
+ * @param bool $demoMode Whether to use demo data when API is unavailable
  * @return array History data with pagination info
  */
-function getSabnzbdHistory($url, $apiKey, $page = 1, $limit = 10) {
+function getSabnzbdHistory($url, $apiKey, $page = 1, $limit = 10, $demoMode = false) {
     // Calculate start position
     $start = ($page - 1) * $limit;
     
@@ -423,6 +434,23 @@ function getSabnzbdHistory($url, $apiKey, $page = 1, $limit = 10) {
         'output' => 'json',
         'limit' => 1
     ], $apiKey);
+    
+    // Check if we need to use demo data
+    if ((!isset($response['history']) || empty($response['history'])) && $demoMode) {
+        $demoHistory = getSampleSabnzbdHistory($limit);
+        $total = $demoHistory['noofslots_total'];
+        $totalPages = ceil($total / $limit);
+        
+        // Add pagination info to demo data
+        $demoHistory['pagination'] = [
+            'current_page' => $page,
+            'total_pages' => $totalPages,
+            'total_items' => $total,
+            'items_per_page' => $limit
+        ];
+        
+        return $demoHistory;
+    }
     
     $total = $totalResponse['history']['noofslots'] ?? 0;
     $totalPages = ceil($total / $limit);
@@ -450,16 +478,86 @@ function getSabnzbdHistory($url, $apiKey, $page = 1, $limit = 10) {
  * @param string $sonarrApiKey Sonarr API key
  * @param string $radarrUrl Radarr URL for movie metadata
  * @param string $radarrApiKey Radarr API key
+ * @param bool $demoMode Whether to use demo data when API is unavailable
  * @return array Recently completed downloads
  */
-function getRecentlyDownloadedContent($url, $apiKey, $limit = 6, $sonarrUrl = '', $sonarrApiKey = '', $radarrUrl = '', $radarrApiKey = '') {
+function getRecentlyDownloadedContent($url, $apiKey, $limit = 6, $sonarrUrl = '', $sonarrApiKey = '', $radarrUrl = '', $radarrApiKey = '', $demoMode = false) {
     $response = makeApiRequest($url, 'api', [
         'mode' => 'history',
         'output' => 'json',
         'limit' => 30 // Get more items initially so we can consolidate them
     ], $apiKey);
     
-    if (isset($response['history']) && isset($response['history']['slots'])) {
+    // Check if we need to use demo data
+    if ((!isset($response['history']) || !isset($response['history']['slots']) || empty($response['history']['slots'])) && $demoMode) {
+        // Use demo data with the sampling history function
+        $demoHistory = getSampleSabnzbdHistory($limit);
+        // Process the demo history slots to match the expected format
+        $processedDownloads = [];
+        
+        foreach ($demoHistory['slots'] as $item) {
+            // Extract basic information
+            $processedItem = [
+                'id' => $item['id'],
+                'name' => $item['name'],
+                'type' => $item['type'],
+                'category' => $item['category'],
+                'completed' => $item['completed'],
+                'size' => $item['size'],
+                'clean_name' => $item['name']
+            ];
+            
+            // Check if it's a TV show and add additional info
+            if ($item['type'] === 'tv') {
+                // Try to match a show name pattern
+                if (preg_match('/^(.*?)[\.|\s][sS](\d+)[eE](\d+)/', $item['name'], $matches)) {
+                    $showName = trim(str_replace(['.', '_'], ' ', $matches[1]));
+                    $processedItem['clean_name'] = $showName;
+                    $processedItem['season'] = intval($matches[2]);
+                    $processedItem['episode'] = intval($matches[3]);
+                    $processedItem['episodes_count'] = 1;
+                }
+                
+                // Try to match with a sample TV show to get image
+                foreach (getSampleTvShows() as $show) {
+                    if (stripos($processedItem['clean_name'], $show['title']) !== false) {
+                        $processedItem['image'] = getPosterUrl($show['images']);
+                        $processedItem['show_id'] = $show['id'];
+                        break;
+                    }
+                }
+            }
+            // Check if it's a movie and add additional info
+            else if ($item['type'] === 'movie') {
+                // Try to match a movie name pattern
+                if (preg_match('/^(.*?)[\.\s]\d{4}/', $item['name'], $matches)) {
+                    $movieName = trim(str_replace(['.', '_'], ' ', $matches[1]));
+                    $processedItem['clean_name'] = $movieName;
+                }
+                
+                // Try to match with a sample movie to get image
+                foreach (getSampleMovies() as $movie) {
+                    if (stripos($processedItem['clean_name'], $movie['title']) !== false) {
+                        $processedItem['image'] = getPosterUrl($movie['images']);
+                        $processedItem['movie_id'] = $movie['id'];
+                        $processedItem['year'] = $movie['year'];
+                        break;
+                    }
+                }
+            }
+            
+            $processedDownloads[] = $processedItem;
+        }
+        
+        // Sort by completed date (newest first)
+        usort($processedDownloads, function($a, $b) {
+            return strtotime($b['completed']) - strtotime($a['completed']);
+        });
+        
+        // Return the limited result
+        return array_slice($processedDownloads, 0, $limit);
+    }
+    else if (isset($response['history']) && isset($response['history']['slots'])) {
         // Only return completed downloads
         $downloads = array_filter($response['history']['slots'], function($item) {
             return $item['status'] === 'Completed';

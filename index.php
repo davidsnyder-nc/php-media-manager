@@ -27,12 +27,15 @@ $sonarrData = [];
 $radarrData = [];
 $sabnzbdData = [];
 
-// Check if we have all necessary settings
-$hasAllSettings = !empty($settings['sonarr_url']) && !empty($settings['sonarr_api_key']) &&
-                  !empty($settings['radarr_url']) && !empty($settings['radarr_api_key']) &&
-                  !empty($settings['sabnzbd_url']) && !empty($settings['sabnzbd_api_key']);
+// Check for demo mode
+$demoMode = isset($settings['demo_mode']) && $settings['demo_mode'] === 'enabled';
 
-// If we have settings, fetch data from the APIs
+// Check if we have all necessary settings
+$hasAllSettings = (!empty($settings['sonarr_url']) && !empty($settings['sonarr_api_key']) &&
+                  !empty($settings['radarr_url']) && !empty($settings['radarr_api_key']) &&
+                  !empty($settings['sabnzbd_url']) && !empty($settings['sabnzbd_api_key'])) || $demoMode;
+
+// If we have settings or demo mode is enabled, fetch data from the APIs
 if ($hasAllSettings) {
     // Get Sonarr data
     if (!empty($settings['sonarr_url']) && !empty($settings['sonarr_api_key'])) {
