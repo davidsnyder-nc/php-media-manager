@@ -9,6 +9,9 @@ $messageType = '';
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Debug - log the POST data
+    error_log("POST data received: " . print_r($_POST, true));
+    
     // Gather settings from the form
     $settings = [
         'sonarr_url' => isset($_POST['sonarr_url']) ? trim($_POST['sonarr_url']) : '',
@@ -20,6 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'theme' => isset($_POST['theme']) ? $_POST['theme'] : 'light',
         'demo_mode' => isset($_POST['demo_mode']) ? $_POST['demo_mode'] : 'disabled',
     ];
+    
+    // Debug - log the settings that will be saved
+    error_log("Settings to be saved: " . print_r($settings, true));
     
     // Validate URLs
     $urls = ['sonarr_url', 'radarr_url', 'sabnzbd_url'];

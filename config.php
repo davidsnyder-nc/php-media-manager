@@ -52,8 +52,12 @@ function loadSettings() {
  * @return bool Whether the settings were saved successfully
  */
 function saveSettings($settings) {
+    // Debug - log the settings being saved
+    error_log("saveSettings called with: " . print_r($settings, true));
+    
     // Validate the settings array
     if (!is_array($settings)) {
+        error_log("saveSettings failed: settings is not an array");
         return false;
     }
     
@@ -74,6 +78,14 @@ function saveSettings($settings) {
     // Encode the settings as JSON
     $config = json_encode($settings, JSON_PRETTY_PRINT);
     
+    // Debug - log the JSON being written
+    error_log("JSON to write: " . $config);
+    
     // Save the settings to the config file
-    return file_put_contents(CONFIG_FILE, $config) !== false;
+    $result = file_put_contents(CONFIG_FILE, $config) !== false;
+    
+    // Debug - log the result
+    error_log("file_put_contents result: " . ($result ? "success" : "failure"));
+    
+    return $result;
 }
