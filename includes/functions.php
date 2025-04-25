@@ -151,12 +151,49 @@ function getSonarrEpisodes($url, $apiKey, $seriesId) {
 function getUpcomingEpisodes($url, $apiKey) {
     $episodes = makeApiRequest($url, 'api/v3/calendar', [
         'start' => date('Y-m-d'),
-        'end' => date('Y-m-d', strtotime('+7 days'))
+        'end' => date('Y-m-d', strtotime('+7 days')),
+        'includeEpisodeFile' => 'true',
+        'includeEpisodeImages' => 'false',
+        'includeSeriesImages' => 'false'
     ], $apiKey);
     
     if (!$episodes || !is_array($episodes)) {
         return [];
     }
+    
+    // Get all shows for reference
+    $allShows = getSonarrShows($url, $apiKey);
+    $showsById = [];
+    
+    // Create a lookup array of shows by ID
+    if (is_array($allShows)) {
+        foreach ($allShows as $show) {
+            if (isset($show['id'])) {
+                $showsById[$show['id']] = $show;
+            }
+        }
+    }
+    
+    // Add series info to each episode if missing
+    foreach ($episodes as &$episode) {
+        if (!isset($episode['series']) || !isset($episode['series']['title'])) {
+            $seriesId = $episode['seriesId'] ?? 0;
+            if (isset($showsById[$seriesId])) {
+                $episode['series'] = [
+                    'id' => $seriesId,
+                    'title' => $showsById[$seriesId]['title'] ?? 'Unknown Show',
+                    'status' => $showsById[$seriesId]['status'] ?? ''
+                ];
+            } else {
+                $episode['series'] = [
+                    'id' => $seriesId,
+                    'title' => 'Unknown Show',
+                    'status' => ''
+                ];
+            }
+        }
+    }
+    unset($episode); // Clear reference
     
     // Sort by air date
     usort($episodes, function($a, $b) {
@@ -219,6 +256,43 @@ function getRadarrMovieDetails($url, $apiKey, $id) {
     }
     
     return false;
+}
+
+/**
+ * Get upcoming movies from Radarr
+ * 
+ * @param string $url Radarr base URL
+ * @param string $apiKey Radarr API key
+ * @return array Array of upcoming movies
+ */
+function getUpcomingMovies($url, $apiKey) {
+    $movies = getRadarrMovies($url, $apiKey);
+    if (!$movies || !is_array($movies)) {
+        return [];
+    }
+    
+    $upcomingMovies = [];
+    $now = new DateTime();
+    
+    foreach ($movies as $movie) {
+        if (isset($movie['inCinemas']) && !empty($movie['inCinemas'])) {
+            $releaseDate = new DateTime($movie['inCinemas']);
+            
+            // If movie is coming soon (in the next 60 days) and has not been released yet
+            if ($releaseDate > $now && $releaseDate < (clone $now)->modify('+60 days')) {
+                $upcomingMovies[] = $movie;
+            }
+        }
+    }
+    
+    // Sort by release date
+    usort($upcomingMovies, function($a, $b) {
+        $dateA = new DateTime($a['inCinemas'] ?? 'now');
+        $dateB = new DateTime($b['inCinemas'] ?? 'now');
+        return $dateA <=> $dateB; // Sort by closest release date first
+    });
+    
+    return $upcomingMovies;
 }
 
 /**
