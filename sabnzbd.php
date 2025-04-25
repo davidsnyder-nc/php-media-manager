@@ -5,25 +5,43 @@ require_once 'includes/functions.php';
 // Load settings from the config file
 $settings = loadSettings();
 
+// Check for demo mode
+$demoMode = isset($settings['demo_mode']) && $settings['demo_mode'] === 'enabled';
+
 // Initialize variables
 $queueData = [];
 $historyData = [];
 $serverStatus = [];
 
-// Check if we have necessary settings
-if (!empty($settings['sabnzbd_url']) && !empty($settings['sabnzbd_api_key'])) {
-    // Get SABnzbd queue data
-    $queueData = getSabnzbdQueue($settings['sabnzbd_url'], $settings['sabnzbd_api_key']);
-    
+// Check if we have necessary settings or if demo mode is enabled
+if ($demoMode || (!empty($settings['sabnzbd_url']) && !empty($settings['sabnzbd_api_key']))) {
     // Get current page for history pagination
     $currentPage = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
     $itemsPerPage = 10; // Show 10 items per page
     
-    // Get SABnzbd history data with pagination
-    $historyData = getSabnzbdHistory($settings['sabnzbd_url'], $settings['sabnzbd_api_key'], $currentPage, $itemsPerPage);
-    
-    // Get SABnzbd server status
-    $serverStatus = getSabnzbdStatus($settings['sabnzbd_url'], $settings['sabnzbd_api_key']);
+    if ($demoMode) {
+        // Get sample data for demo mode
+        $queueData = getSampleSabnzbdQueue();
+        $historyData = getSampleSabnzbdHistory($itemsPerPage);
+        $serverStatus = [
+            'status' => 'Demo Mode',
+            'version' => 'Demo v1.0',
+            'paused' => false,
+            'diskspace1' => 500, // GB
+            'diskspace2' => 1000, // GB
+            'speedlimit' => '1000', // KB/s
+            'have_warnings' => false
+        ];
+    } else {
+        // Get SABnzbd queue data
+        $queueData = getSabnzbdQueue($settings['sabnzbd_url'], $settings['sabnzbd_api_key']);
+        
+        // Get SABnzbd history data with pagination
+        $historyData = getSabnzbdHistory($settings['sabnzbd_url'], $settings['sabnzbd_api_key'], $currentPage, $itemsPerPage);
+        
+        // Get SABnzbd server status
+        $serverStatus = getSabnzbdStatus($settings['sabnzbd_url'], $settings['sabnzbd_api_key']);
+    }
 }
 
 $pageTitle = "Downloads - SABnzbd";
@@ -35,10 +53,10 @@ require_once 'includes/header.php';
         <h1><i class="fa fa-download"></i> SABnzbd Downloads</h1>
     </div>
     
-    <?php if (empty($settings['sabnzbd_url']) || empty($settings['sabnzbd_api_key'])): ?>
+    <?php if (!$demoMode && (empty($settings['sabnzbd_url']) || empty($settings['sabnzbd_api_key']))): ?>
         <div class="alert alert-warning">
             <h4><i class="fa fa-exclamation-triangle"></i> Configuration Required</h4>
-            <p>Please configure your SABnzbd API settings to view downloads.</p>
+            <p>Please configure your SABnzbd API settings to view downloads, or enable Demo Mode in settings.</p>
             <a href="settings.php" class="btn btn-primary">Go to Settings</a>
         </div>
     <?php else: ?>

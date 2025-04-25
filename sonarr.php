@@ -120,10 +120,10 @@ require_once 'includes/header.php';
         </div>
     </div>
     
-    <?php if (empty($settings['sonarr_url']) || empty($settings['sonarr_api_key'])): ?>
+    <?php if (!$demoMode && (empty($settings['sonarr_url']) || empty($settings['sonarr_api_key']))): ?>
         <div class="alert alert-warning">
             <h4><i class="fa fa-exclamation-triangle"></i> Configuration Required</h4>
-            <p>Please configure your Sonarr API settings to view TV shows.</p>
+            <p>Please configure your Sonarr API settings to view TV shows, or enable Demo Mode in settings.</p>
             <a href="settings.php" class="btn btn-primary">Go to Settings</a>
         </div>
     <?php elseif (empty($shows) && empty($externalSearchResults)): ?>

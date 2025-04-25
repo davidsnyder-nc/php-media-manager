@@ -11,12 +11,12 @@ $messageType = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Gather settings from the form
     $settings = [
-        'sonarr_url' => trim($_POST['sonarr_url']),
-        'sonarr_api_key' => trim($_POST['sonarr_api_key']),
-        'radarr_url' => trim($_POST['radarr_url']),
-        'radarr_api_key' => trim($_POST['radarr_api_key']),
-        'sabnzbd_url' => trim($_POST['sabnzbd_url']),
-        'sabnzbd_api_key' => trim($_POST['sabnzbd_api_key']),
+        'sonarr_url' => isset($_POST['sonarr_url']) ? trim($_POST['sonarr_url']) : '',
+        'sonarr_api_key' => isset($_POST['sonarr_api_key']) ? trim($_POST['sonarr_api_key']) : '',
+        'radarr_url' => isset($_POST['radarr_url']) ? trim($_POST['radarr_url']) : '',
+        'radarr_api_key' => isset($_POST['radarr_api_key']) ? trim($_POST['radarr_api_key']) : '',
+        'sabnzbd_url' => isset($_POST['sabnzbd_url']) ? trim($_POST['sabnzbd_url']) : '',
+        'sabnzbd_api_key' => isset($_POST['sabnzbd_api_key']) ? trim($_POST['sabnzbd_api_key']) : '',
         'theme' => isset($_POST['theme']) ? $_POST['theme'] : 'light',
         'demo_mode' => isset($_POST['demo_mode']) ? $_POST['demo_mode'] : 'disabled',
     ];
@@ -72,6 +72,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Test connections function
 function testConnections($settings) {
     $results = [];
+    $demoMode = isset($settings['demo_mode']) && $settings['demo_mode'] === 'enabled';
+    
+    // If demo mode is enabled, return success for all connections
+    if ($demoMode) {
+        return [
+            'sonarr' => ['success' => true, 'message' => 'Demo mode enabled', 'version' => 'Demo v1.0'],
+            'radarr' => ['success' => true, 'message' => 'Demo mode enabled', 'version' => 'Demo v1.0'],
+            'sabnzbd' => ['success' => true, 'message' => 'Demo mode enabled', 'version' => 'Demo v1.0']
+        ];
+    }
     
     // Test Sonarr
     if (!empty($settings['sonarr_url']) && !empty($settings['sonarr_api_key'])) {

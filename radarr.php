@@ -5,6 +5,9 @@ require_once 'includes/functions.php';
 // Load settings from the config file
 $settings = loadSettings();
 
+// Check for demo mode
+$demoMode = isset($settings['demo_mode']) && $settings['demo_mode'] === 'enabled';
+
 // Get query parameters for filtering/sorting
 $sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'title';
 $sortOrder = isset($_GET['order']) ? $_GET['order'] : 'asc';
@@ -14,9 +17,9 @@ $statusFilter = isset($_GET['status']) ? $_GET['status'] : '';
 // Initialize array for movies
 $movies = [];
 
-// Check if we have necessary settings
-if (!empty($settings['radarr_url']) && !empty($settings['radarr_api_key'])) {
-    $movies = getRadarrMovies($settings['radarr_url'], $settings['radarr_api_key']);
+// Check if we have necessary settings or if demo mode is enabled
+if ($demoMode || (!empty($settings['radarr_url']) && !empty($settings['radarr_api_key']))) {
+    $movies = getRadarrMovies($settings['radarr_url'], $settings['radarr_api_key'], $demoMode);
     
     // Search for movies
     $externalSearchResults = [];
@@ -26,8 +29,12 @@ if (!empty($settings['radarr_url']) && !empty($settings['radarr_api_key'])) {
             return stripos($movie['title'], $searchTerm) !== false;
         });
         
-        // Then, search for new movies via API
-        $searchResults = searchRadarrMovies($settings['radarr_url'], $settings['radarr_api_key'], $searchTerm);
+        // Then, search for new movies via API if not in demo mode
+        if (!$demoMode) {
+            $searchResults = searchRadarrMovies($settings['radarr_url'], $settings['radarr_api_key'], $searchTerm);
+        } else {
+            $searchResults = []; // In demo mode, just use the existing movies
+        }
         
         if (!empty($searchResults) && is_array($searchResults)) {
             // Get IDs of existing movies for comparison
@@ -123,10 +130,10 @@ require_once 'includes/header.php';
         </div>
     </div>
     
-    <?php if (empty($settings['radarr_url']) || empty($settings['radarr_api_key'])): ?>
+    <?php if (!$demoMode && (empty($settings['radarr_url']) || empty($settings['radarr_api_key']))): ?>
         <div class="alert alert-warning">
             <h4><i class="fa fa-exclamation-triangle"></i> Configuration Required</h4>
-            <p>Please configure your Radarr API settings to view movies.</p>
+            <p>Please configure your Radarr API settings to view movies, or enable Demo Mode in settings.</p>
             <a href="settings.php" class="btn btn-primary">Go to Settings</a>
         </div>
     <?php elseif (empty($movies) && empty($externalSearchResults)): ?>
