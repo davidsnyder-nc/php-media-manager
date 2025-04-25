@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', function() {
         [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
     }
     
+    // Initialize lazy loading for images
+    setupLazyLoading();
+    
     // Handle SABnzbd action buttons
     const sabnzbdButtons = document.querySelectorAll('[data-action]');
     sabnzbdButtons.forEach(button => {
@@ -221,4 +224,111 @@ function showAlert(type, message) {
             alert.remove();
         }, 150);
     }, 5000);
+}
+
+/**
+ * Set up lazy loading for media posters and other images
+ * This dramatically improves page load performance by loading images only when they're visible
+ */
+function setupLazyLoading() {
+    // Check if IntersectionObserver is supported
+    if ('IntersectionObserver' in window) {
+        const mediaPosters = document.querySelectorAll('.media-poster');
+        const imageLoadingObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const poster = entry.target;
+                    const backgroundImage = getComputedStyle(poster).backgroundImage;
+                    
+                    // Only process elements with background images that use URL
+                    if (backgroundImage && backgroundImage.includes('url("api.php?action=proxy_image')) {
+                        const match = backgroundImage.match(/url\("([^"]+)"\)/);
+                        if (match && match[1]) {
+                            // We need to keep the original URL, but load the high quality version in advance
+                            const imageUrl = match[1];
+                            
+                            // Pre-fetch the image
+                            const img = new Image();
+                            img.onload = function() {
+                                // Once loaded, apply a transition effect
+                                poster.style.opacity = '0.6';
+                                poster.style.transition = 'opacity 0.3s ease-in';
+                                
+                                // Apply the cached image
+                                setTimeout(() => {
+                                    poster.style.backgroundImage = `url("${imageUrl}")`;
+                                    poster.style.opacity = '1';
+                                }, 50);
+                                
+                                // Add a loaded data attribute to avoid reprocessing
+                                poster.setAttribute('data-loaded', 'true');
+                                
+                                // Stop observing this element
+                                observer.unobserve(poster);
+                            };
+                            img.src = imageUrl;
+                        }
+                    }
+                }
+            });
+        }, {
+            rootMargin: '100px', // Load images that are within 100px of the viewport
+            threshold: 0.1 // Trigger when at least 10% of the item is visible
+        });
+        
+        // Start observing all poster elements
+        mediaPosters.forEach(poster => {
+            if (!poster.hasAttribute('data-loaded')) {
+                // Set minimal opacity for better transition
+                poster.style.opacity = '0.6';
+                imageLoadingObserver.observe(poster);
+            }
+        });
+    }
+    
+    // Create a placeholder image cache for future page loads
+    cacheCommonImages();
+}
+
+/**
+ * Pre-cache frequently used images for better performance
+ */
+function cacheCommonImages() {
+    // Track recently loaded images to avoid redundant caching
+    const recentlyLoaded = JSON.parse(localStorage.getItem('recentlyLoadedImages') || '[]');
+    const maxTrackedImages = 50; // Maximum number of recently viewed images to track
+    
+    // Get all currently visible posters
+    const visiblePosters = Array.from(document.querySelectorAll('.media-poster'))
+        .filter(poster => {
+            const rect = poster.getBoundingClientRect();
+            return (
+                rect.top >= 0 &&
+                rect.left >= 0 &&
+                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+            );
+        });
+        
+    // Extract image URLs from the posters
+    const imageUrls = visiblePosters
+        .map(poster => {
+            const backgroundImage = getComputedStyle(poster).backgroundImage;
+            const match = backgroundImage.match(/url\("([^"]+)"\)/);
+            return match ? match[1] : null;
+        })
+        .filter(url => url && !recentlyLoaded.includes(url));
+    
+    // Cache new images
+    if (imageUrls.length > 0) {
+        // Add to recently loaded list
+        const updatedRecent = [...imageUrls, ...recentlyLoaded].slice(0, maxTrackedImages);
+        localStorage.setItem('recentlyLoadedImages', JSON.stringify(updatedRecent));
+        
+        // Prefetch these images
+        imageUrls.forEach(url => {
+            const img = new Image();
+            img.src = url;
+        });
+    }
 }

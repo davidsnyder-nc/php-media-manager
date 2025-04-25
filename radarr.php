@@ -145,7 +145,7 @@ require_once 'includes/header.php';
                     <div class="media-item">
                         <a href="movie_details.php?id=<?php echo $movie['id']; ?>">
                             <?php if (!empty($movie['images'])): ?>
-                                <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($movie); ?>');"></div>
+                                <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($movie); ?>');" data-movie-id="<?php echo $movie['id']; ?>"></div>
                             <?php else: ?>
                                 <div class="media-poster no-image">
                                     <i class="fa fa-film"></i>
@@ -176,7 +176,7 @@ require_once 'includes/header.php';
                         <div class="media-item">
                             <div class="position-relative">
                                 <?php if (!empty($movie['images'])): ?>
-                                    <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($movie); ?>');"></div>
+                                    <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($movie); ?>');" data-movie-id="<?php echo $movie['tmdbId'] ?? ''; ?>"></div>
                                 <?php else: ?>
                                     <div class="media-poster no-image">
                                         <i class="fa fa-film"></i>
