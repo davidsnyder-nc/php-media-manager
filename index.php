@@ -49,7 +49,10 @@ require_once 'includes/header.php';
         <section class="card">
             <div class="card-header">
                 <h2><i class="fa fa-download"></i> SABnzbd Queue</h2>
-                <a href="sabnzbd.php" class="btn btn-sm btn-primary">View Details</a>
+                <div>
+                    <a href="sabnzbd.php?view=history" class="btn btn-sm btn-secondary me-2">View History</a>
+                    <a href="sabnzbd.php" class="btn btn-sm btn-primary">View Queue</a>
+                </div>
             </div>
             <div class="card-body">
                 <?php if (empty($sabnzbdData)): ?>
@@ -142,7 +145,7 @@ require_once 'includes/header.php';
                                         <div class="episode-item">
                                             <div class="episode-date"><?php echo date('M d', strtotime($episode['airDate'])); ?></div>
                                             <div class="episode-info">
-                                                <div class="episode-show"><?php echo htmlspecialchars($episode['series']['title']); ?></div>
+                                                <div class="episode-show"><?php echo isset($episode['series']['title']) ? htmlspecialchars($episode['series']['title']) : 'Unknown Show'; ?></div>
                                                 <div class="episode-title">S<?php echo str_pad($episode['seasonNumber'], 2, '0', STR_PAD_LEFT); ?>E<?php echo str_pad($episode['episodeNumber'], 2, '0', STR_PAD_LEFT); ?> - <?php echo htmlspecialchars($episode['title']); ?></div>
                                             </div>
                                         </div>

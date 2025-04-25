@@ -351,11 +351,19 @@ function testApiConnection($url, $apiKey, $service) {
 /**
  * Format file size to human-readable format
  * 
- * @param float $bytes Size in bytes or megabytes
+ * @param float|string $bytes Size in bytes or megabytes
  * @param bool $isMB Whether the input is already in megabytes
  * @return string Formatted size
  */
 function formatSize($bytes, $isMB = false) {
+    // Handle non-numeric values
+    if (!is_numeric($bytes)) {
+        return '0 B';
+    }
+    
+    // Convert to float
+    $bytes = (float) $bytes;
+    
     if ($isMB) {
         $bytes = $bytes * 1024 * 1024;
     }
