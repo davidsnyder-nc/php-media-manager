@@ -70,20 +70,38 @@ if ($demoMode || (!empty($settings['radarr_url']) && !empty($settings['radarr_ap
         });
     }
     
-    // Sort the movies
-    usort($movies, function($a, $b) use ($sortBy, $sortOrder) {
-        if ($sortBy === 'title') {
-            $result = strcasecmp($a['title'], $b['title']);
-        } elseif ($sortBy === 'year' && isset($a['year']) && isset($b['year'])) {
-            $result = $a['year'] - $b['year'];
-        } elseif ($sortBy === 'added' && isset($a['added']) && isset($b['added'])) {
-            $result = strtotime($a['added']) - strtotime($b['added']);
-        } else {
-            $result = 0;
-        }
-        
-        return ($sortOrder === 'asc') ? $result : -$result;
-    });
+    // Sort the movies if we have any
+    if (!empty($movies) && is_array($movies)) {
+        usort($movies, function($a, $b) use ($sortBy, $sortOrder) {
+            // Safety check that we have arrays
+            if (!is_array($a) || !is_array($b)) {
+                return 0;
+            }
+            
+            // Sort by title with proper null checks
+            if ($sortBy === 'title') {
+                $titleA = isset($a['title']) && is_string($a['title']) ? $a['title'] : '';
+                $titleB = isset($b['title']) && is_string($b['title']) ? $b['title'] : '';
+                $result = strcasecmp($titleA, $titleB);
+            } 
+            // Sort by year with proper null checks
+            elseif ($sortBy === 'year' && isset($a['year']) && isset($b['year']) 
+                    && is_numeric($a['year']) && is_numeric($b['year'])) {
+                $result = $a['year'] - $b['year'];
+            } 
+            // Sort by date added with proper null checks
+            elseif ($sortBy === 'added' && isset($a['added']) && isset($b['added']) 
+                    && is_string($a['added']) && is_string($b['added'])) {
+                $result = strtotime($a['added']) - strtotime($b['added']);
+            } 
+            // Default - no sorting
+            else {
+                $result = 0;
+            }
+            
+            return ($sortOrder === 'asc') ? $result : -$result;
+        });
+    }
 }
 
 $pageTitle = "Movies - Radarr";
