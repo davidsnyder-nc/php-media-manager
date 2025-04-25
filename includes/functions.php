@@ -618,12 +618,18 @@ function searchRadarrMovies($url, $apiKey, $query) {
 function getImageProxyUrl($item, $type = 'poster') {
     // Default fallback for no image
     $imageUrl = '';
+    $imageKey = '';
     
     // Find the appropriate image from the item's images array
     if (!empty($item['images']) && is_array($item['images'])) {
         foreach ($item['images'] as $image) {
             if (isset($image['coverType']) && strtolower($image['coverType']) === strtolower($type)) {
                 $imageUrl = $image['remoteUrl'] ?? $image['url'] ?? '';
+                
+                // Create a unique key for this image based on ID and type
+                if (!empty($item['id'])) {
+                    $imageKey = md5($item['id'] . '_' . strtolower($type));
+                }
                 break;
             }
         }
@@ -633,6 +639,11 @@ function getImageProxyUrl($item, $type = 'poster') {
             foreach ($item['images'] as $image) {
                 if (isset($image['coverType']) && strtolower($image['coverType']) === 'poster') {
                     $imageUrl = $image['remoteUrl'] ?? $image['url'] ?? '';
+                    
+                    // Create a unique key for this image based on ID and fallback type
+                    if (!empty($item['id'])) {
+                        $imageKey = md5($item['id'] . '_poster');
+                    }
                     break;
                 }
             }
@@ -644,6 +655,25 @@ function getImageProxyUrl($item, $type = 'poster') {
         return '';
     }
     
-    // Return the proxied URL
-    return 'api.php?action=proxy_image&url=' . base64_encode($imageUrl);
+    // If we have a key, check for cached version first
+    if (!empty($imageKey)) {
+        // Create a cache directory if it doesn't exist
+        $cacheDir = 'cache/images';
+        if (!file_exists($cacheDir)) {
+            @mkdir($cacheDir, 0775, true);
+        }
+        
+        $cacheFile = $cacheDir . '/' . $imageKey . '.jpg';
+        
+        // Check if the image is already cached and not too old (24 hours)
+        if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < 86400)) {
+            // Return the direct path to the cached image
+            return $cacheFile;
+        }
+    }
+    
+    // Use the proxy URL with a cache param
+    return 'api.php?action=proxy_image&cache=' . (!empty($imageKey) ? '1' : '0') . 
+           '&key=' . (!empty($imageKey) ? $imageKey : '') . 
+           '&url=' . base64_encode($imageUrl);
 }

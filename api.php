@@ -322,6 +322,31 @@ if (!empty($action)) {
     // Proxy image request action
     else if ($action === 'proxy_image' && isset($_GET['url'])) {
         $imageUrl = base64_decode($_GET['url']);
+        $useCache = isset($_GET['cache']) && $_GET['cache'] == '1';
+        $cacheKey = isset($_GET['key']) ? $_GET['key'] : '';
+        $cacheDir = 'cache/images';
+        $cacheFile = $cacheDir . '/' . $cacheKey . '.jpg';
+        
+        // Set cache-control headers
+        header('Cache-Control: max-age=86400, public'); // 24 hours
+        header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 86400) . ' GMT');
+        
+        // Check if we should try to save to cache
+        if ($useCache && !empty($cacheKey)) {
+            // Make sure cache directory exists
+            if (!file_exists($cacheDir)) {
+                @mkdir($cacheDir, 0775, true);
+            }
+            
+            // Check if cached image already exists
+            if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < 86400)) {
+                $contentType = mime_content_type($cacheFile) ?: 'image/jpeg';
+                header('Content-Type: ' . $contentType);
+                header('X-Cache: HIT');
+                readfile($cacheFile);
+                exit;
+            }
+        }
         
         if (filter_var($imageUrl, FILTER_VALIDATE_URL)) {
             // Forward the request to the actual image
@@ -329,14 +354,21 @@ if (!empty($action)) {
             curl_setopt($ch, CURLOPT_URL, $imageUrl);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10); // 10 seconds timeout
             $imageData = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
             curl_close($ch);
             
             if ($httpCode === 200 && !empty($imageData)) {
+                // Save to cache if enabled
+                if ($useCache && !empty($cacheKey)) {
+                    file_put_contents($cacheFile, $imageData);
+                }
+                
                 // Override JSON header and set the proper content type
                 header('Content-Type: ' . $contentType);
+                header('X-Cache: MISS');
                 echo $imageData;
                 exit;
             } else {
