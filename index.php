@@ -110,31 +110,16 @@ require_once 'includes/header.php';
                 <?php if (empty($sonarrData)): ?>
                     <div class="alert alert-info">No TV shows found or unable to connect to Sonarr</div>
                 <?php else: ?>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h4>Recently Added</h4>
-                            <div class="media-grid">
-                                <?php 
-                                $recentShows = array_slice($sonarrData, 0, 4);
-                                foreach ($recentShows as $show): 
-                                ?>
-                                    <div class="media-item">
-                                        <a href="show_details.php?id=<?php echo $show['id']; ?>">
-                                            <?php if (!empty($show['images'])): ?>
-                                                <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($show); ?>');"></div>
-                                            <?php else: ?>
-                                                <div class="media-poster no-image">
-                                                    <i class="fa fa-tv"></i>
-                                                </div>
-                                            <?php endif; ?>
-                                            <div class="media-title"><?php echo htmlspecialchars($show['title']); ?></div>
-                                        </a>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <h4>Upcoming Episodes</h4>
+                    <ul class="nav nav-tabs mb-3" id="showTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="episodes-tab" data-bs-toggle="tab" data-bs-target="#episodes" type="button" role="tab" aria-controls="episodes" aria-selected="true">Upcoming Episodes</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="shows-tab" data-bs-toggle="tab" data-bs-target="#shows" type="button" role="tab" aria-controls="shows" aria-selected="false">Recently Added</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="showTabsContent">
+                        <div class="tab-pane fade show active" id="episodes" role="tabpanel" aria-labelledby="episodes-tab">
                             <?php
                             $upcomingEpisodes = getUpcomingEpisodes($settings['sonarr_url'], $settings['sonarr_api_key']);
                             if (empty($upcomingEpisodes)): 
@@ -159,6 +144,30 @@ require_once 'includes/header.php';
                                     <?php endforeach; ?>
                                 </div>
                             <?php endif; ?>
+                        </div>
+                        <div class="tab-pane fade" id="shows" role="tabpanel" aria-labelledby="shows-tab">
+                            <div class="media-grid">
+                                <?php 
+                                $recentShows = array_slice($sonarrData, 0, 6);
+                                foreach ($recentShows as $show): 
+                                ?>
+                                    <div class="media-item">
+                                        <a href="show_details.php?id=<?php echo $show['id']; ?>">
+                                            <?php if (!empty($show['images'])): ?>
+                                                <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($show); ?>');"></div>
+                                            <?php else: ?>
+                                                <div class="media-poster no-image">
+                                                    <i class="fa fa-tv"></i>
+                                                </div>
+                                            <?php endif; ?>
+                                            <div class="media-title"><?php echo htmlspecialchars($show['title']); ?></div>
+                                            <?php if (isset($show['year'])): ?>
+                                                <div class="media-year"><?php echo $show['year']; ?></div>
+                                            <?php endif; ?>
+                                        </a>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
                     </div>
                 <?php endif; ?>
