@@ -306,6 +306,16 @@ body {
   font-weight: 500;
 }
 
+.episode-show-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.episode-show-link:hover .episode-show {
+  color: #007bff;
+  text-decoration: underline;
+}
+
 .episode-title {
   font-size: 0.9rem;
   color: #6c757d;

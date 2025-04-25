@@ -212,22 +212,46 @@ function getUpcomingEpisodes($url, $apiKey) {
         }
     }
     
-    // Add series info to each episode if missing
+    // Process each episode to ensure it has proper series info
     foreach ($episodes as &$episode) {
-        if (!isset($episode['series']) || !isset($episode['series']['title'])) {
-            $seriesId = $episode['seriesId'] ?? 0;
-            if (isset($showsById[$seriesId])) {
-                $episode['series'] = [
-                    'id' => $seriesId,
-                    'title' => $showsById[$seriesId]['title'] ?? 'Unknown Show',
-                    'status' => $showsById[$seriesId]['status'] ?? ''
-                ];
-            } else {
-                $episode['series'] = [
-                    'id' => $seriesId,
-                    'title' => 'Unknown Show',
-                    'status' => ''
-                ];
+        // Get the series ID from the episode
+        $seriesId = $episode['seriesId'] ?? 0;
+        
+        // Check if series info already exists and is complete
+        $hasValidSeriesInfo = isset($episode['series']) && 
+                             isset($episode['series']['id']) && 
+                             isset($episode['series']['title']) && 
+                             $episode['series']['title'] !== 'Unknown Show';
+        
+        // If we don't have valid series info, try to get it from our shows lookup
+        if (!$hasValidSeriesInfo && isset($showsById[$seriesId])) {
+            $episode['series'] = [
+                'id' => $seriesId,
+                'title' => $showsById[$seriesId]['title'],
+                'status' => $showsById[$seriesId]['status'] ?? ''
+            ];
+            
+            // Also set a flat seriesTitle property for easier access
+            $episode['seriesTitle'] = $showsById[$seriesId]['title'];
+        } 
+        // If we still don't have a series title, try to extract it from other properties
+        else if (!isset($episode['seriesTitle']) || empty($episode['seriesTitle'])) {
+            // Check if there's a series title in the series object
+            if (isset($episode['series']['title']) && !empty($episode['series']['title'])) {
+                $episode['seriesTitle'] = $episode['series']['title'];
+            }
+            // If all else fails, use "Unknown Show"
+            else {
+                $episode['seriesTitle'] = 'Unknown Show';
+                
+                // Create a basic series object if it doesn't exist
+                if (!isset($episode['series'])) {
+                    $episode['series'] = [
+                        'id' => $seriesId,
+                        'title' => 'Unknown Show',
+                        'status' => ''
+                    ];
+                }
             }
         }
     }

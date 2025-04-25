@@ -146,7 +146,13 @@ require_once 'includes/header.php';
                                         <div class="episode-item">
                                             <div class="episode-date"><?php echo date('M d', strtotime($episode['airDate'])); ?></div>
                                             <div class="episode-info">
-                                                <div class="episode-show"><?php echo isset($episode['series']['title']) ? htmlspecialchars($episode['series']['title']) : 'Unknown Show'; ?></div>
+                                                <?php if (isset($episode['series']['id'])): ?>
+                                                <a href="show_details.php?id=<?php echo $episode['series']['id']; ?>" class="episode-show-link">
+                                                    <div class="episode-show"><?php echo isset($episode['series']['title']) && $episode['series']['title'] !== 'Unknown Show' ? htmlspecialchars($episode['series']['title']) : htmlspecialchars($episode['seriesTitle'] ?? 'Unknown Show'); ?></div>
+                                                </a>
+                                                <?php else: ?>
+                                                <div class="episode-show"><?php echo isset($episode['series']['title']) && $episode['series']['title'] !== 'Unknown Show' ? htmlspecialchars($episode['series']['title']) : htmlspecialchars($episode['seriesTitle'] ?? 'Unknown Show'); ?></div>
+                                                <?php endif; ?>
                                                 <div class="episode-title">S<?php echo str_pad($episode['seasonNumber'], 2, '0', STR_PAD_LEFT); ?>E<?php echo str_pad($episode['episodeNumber'], 2, '0', STR_PAD_LEFT); ?> - <?php echo htmlspecialchars($episode['title']); ?></div>
                                             </div>
                                         </div>
