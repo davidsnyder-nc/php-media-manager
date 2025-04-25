@@ -67,11 +67,19 @@ else {
             'svg' => 'image/svg+xml',
             'ico' => 'image/x-icon',
             'html' => 'text/html',
-            'txt' => 'text/plain'
+            'txt' => 'text/plain',
+            'zip' => 'application/zip'
         ];
         
         $contentType = isset($contentTypes[$ext]) ? $contentTypes[$ext] : 'application/octet-stream';
         header("Content-Type: $contentType");
+        
+        // Special handling for zip files to ensure proper download
+        if ($ext === 'zip') {
+            header('Content-Disposition: attachment; filename="' . basename($filename) . '"');
+            header('Content-Length: ' . filesize($filename));
+            header('Cache-Control: no-cache');
+        }
         
         // Output the file
         readfile($filename);
