@@ -41,7 +41,7 @@ if ($hasAllSettings) {
     if (!empty($settings['sonarr_url']) && !empty($settings['sonarr_api_key'])) {
         $sonarrData = getSonarrOverview($settings['sonarr_url'], $settings['sonarr_api_key'], $demoMode);
     } elseif ($demoMode) {
-        $sonarrData = getSampleSonarrShows();
+        $sonarrData = getSampleTvShows();
     }
 
     // Get Radarr data
