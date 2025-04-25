@@ -8,175 +8,162 @@ import urllib.parse
 PHP_PATH = "/nix/store/6abnc1cqyn1y6f7nh6v76aa6204mc79z-php-with-extensions-8.2.20/bin/php"
 
 def app(environ, start_response):
-    # Determine the path requested
-    path_info = environ.get('PATH_INFO', '').lstrip('/')
+    # Get the request path and query string
+    path_info = environ.get('PATH_INFO', '/')
+    query_string = environ.get('QUERY_STRING', '')
     
-    # Default to index.html if no path is specified
-    if not path_info:
-        path_info = 'index.html'
-    
-    # Full path to the file
-    file_path = os.path.join(os.getcwd(), path_info)
-    
-    # If the file exists, serve it
-    if os.path.exists(file_path) and os.path.isfile(file_path):
-        # For PHP files, execute them with PHP interpreter
-        if file_path.endswith('.php'):
-            # Prepare query string
-            query_string = environ.get('QUERY_STRING', '')
+    # If this is a PHP file or no extension (possibly a route), use router.php
+    if path_info.endswith('.php') or '.' not in os.path.basename(path_info) or path_info == '/':
+        # Set up environment for PHP
+        env = os.environ.copy()
+        env['QUERY_STRING'] = query_string
+        env['REQUEST_METHOD'] = environ.get('REQUEST_METHOD', 'GET')
+        env['SCRIPT_NAME'] = '/router.php'
+        env['REQUEST_URI'] = path_info
+        
+        if query_string:
+            env['REQUEST_URI'] += '?' + query_string
             
-            # Set environment variables for PHP
-            env = os.environ.copy()
-            env['QUERY_STRING'] = query_string
-            env['REQUEST_METHOD'] = environ.get('REQUEST_METHOD', 'GET')
-            env['SCRIPT_FILENAME'] = file_path
-            env['SCRIPT_NAME'] = '/' + path_info
-            env['REQUEST_URI'] = '/' + path_info
-            
-            if query_string:
-                env['REQUEST_URI'] += '?' + query_string
-                
-            # Add form data for POST requests
-            if environ.get('REQUEST_METHOD') == 'POST':
-                content_length = int(environ.get('CONTENT_LENGTH', 0))
-                if content_length > 0:
-                    post_data = environ['wsgi.input'].read(content_length)
-                    env['CONTENT_LENGTH'] = str(content_length)
-                    env['CONTENT_TYPE'] = environ.get('CONTENT_TYPE', '')
-                else:
-                    post_data = b''
+        # Handle POST data
+        if environ.get('REQUEST_METHOD') == 'POST':
+            content_length = int(environ.get('CONTENT_LENGTH', 0))
+            if content_length > 0:
+                post_data = environ['wsgi.input'].read(content_length)
+                env['CONTENT_LENGTH'] = str(content_length)
+                env['CONTENT_TYPE'] = environ.get('CONTENT_TYPE', '')
             else:
-                post_data = None
-            
-            # Execute PHP script
-            try:
-                if post_data:
-                    with tempfile.NamedTemporaryFile(delete=False) as tf:
-                        tf.write(post_data)
-                        temp_filename = tf.name
-                    
-                    process = subprocess.Popen(
-                        [PHP_PATH, '-f', file_path],
-                        stdin=open(temp_filename, 'rb'),
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        env=env
-                    )
-                    os.unlink(temp_filename)
-                else:
-                    process = subprocess.Popen(
-                        [PHP_PATH, '-f', file_path],
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        env=env
-                    )
-                
-                stdout, stderr = process.communicate()
-                
-                # If there are PHP errors, log them
-                if stderr:
-                    print(f"PHP Error in {path_info}:", stderr.decode())
-                
-                # Parse headers from output (if any)
-                content = stdout
-                headers_end = content.find(b'\r\n\r\n')
-                status = '200 OK'  # Default status
-                output_headers = []  # Initialize empty headers list
-                
-                if headers_end != -1:
-                    headers_raw = content[:headers_end].decode('utf-8').split('\r\n')
-                    
-                    for header in headers_raw:
-                        if header.startswith('HTTP/'):
-                            status_line = header.split(' ', 1)[1]
-                            status = status_line
-                        else:
-                            try:
-                                key, value = header.split(':', 1)
-                                output_headers.append((key.strip(), value.strip()))
-                            except ValueError:
-                                # Skip malformed headers
-                                pass
-                    
-                    content = content[headers_end + 4:]
-                else:
-                    # If no headers found, set default content type
-                    output_headers.append(('Content-Type', 'text/html'))
-                
-                # Add content length
-                output_headers.append(('Content-Length', str(len(content))))
-                
-                start_response(status, output_headers)
-                return [content]
-                
-            except Exception as e:
-                print(f"Error executing PHP: {e}")
-                status = '500 Internal Server Error'
-                response = f"Error executing PHP script: {e}".encode('utf-8')
-                headers = [
-                    ('Content-Type', 'text/plain'),
-                    ('Content-Length', str(len(response)))
-                ]
-                start_response(status, headers)
-                return [response]
+                post_data = b''
         else:
-            # For non-PHP files, serve them as static files
+            post_data = None
+            
+        try:
+            # Execute router.php with PHP
+            router_path = os.path.join(os.getcwd(), 'router.php')
+            
+            if post_data:
+                # Create a temporary file for POST data
+                with tempfile.NamedTemporaryFile(delete=False) as tf:
+                    tf.write(post_data)
+                    temp_filename = tf.name
+                
+                process = subprocess.Popen(
+                    [PHP_PATH, '-f', router_path],
+                    stdin=open(temp_filename, 'rb'),
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    env=env
+                )
+                os.unlink(temp_filename)
+            else:
+                process = subprocess.Popen(
+                    [PHP_PATH, '-f', router_path],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    env=env
+                )
+                
+            stdout, stderr = process.communicate()
+            
+            # Log PHP errors
+            if stderr:
+                print(f"PHP Error: {stderr.decode()}")
+                
+            # Extract headers and content
+            headers_end = stdout.find(b'\r\n\r\n')
+            
+            if headers_end != -1:
+                headers_section = stdout[:headers_end].decode('utf-8')
+                content = stdout[headers_end + 4:]
+                
+                # Parse headers
+                headers_list = []
+                status = '200 OK'
+                
+                for line in headers_section.split('\r\n'):
+                    if line.startswith('HTTP/'):
+                        status = line.split(' ', 1)[1]
+                    elif ':' in line:
+                        key, value = line.split(':', 1)
+                        headers_list.append((key.strip(), value.strip()))
+            else:
+                content = stdout
+                status = '200 OK'
+                headers_list = [('Content-Type', 'text/html')]
+            
+            # Add content length if not already present
+            if not any(h[0].lower() == 'content-length' for h in headers_list):
+                headers_list.append(('Content-Length', str(len(content))))
+                
+            start_response(status, headers_list)
+            return [content]
+            
+        except Exception as e:
+            print(f"Error executing PHP router: {e}")
+            status = '500 Internal Server Error'
+            response = f"Error executing PHP router: {e}".encode('utf-8')
+            headers = [
+                ('Content-Type', 'text/plain'),
+                ('Content-Length', str(len(response)))
+            ]
+            start_response(status, headers)
+            return [response]
+            
+    else:
+        # For non-PHP static files, serve them directly
+        file_path = os.path.join(os.getcwd(), path_info.lstrip('/'))
+        
+        if os.path.exists(file_path) and os.path.isfile(file_path):
             content_type, _ = mimetypes.guess_type(file_path)
             if content_type is None:
                 content_type = 'application/octet-stream'
-            
-            # Read the file
+                
             with open(file_path, 'rb') as f:
                 file_content = f.read()
-            
-            # Send the response
-            status = '200 OK'
+                
             headers = [
                 ('Content-Type', content_type),
                 ('Content-Length', str(len(file_content)))
             ]
-            start_response(status, headers)
-            
+            start_response('200 OK', headers)
             return [file_content]
-    else:
-        # If the file doesn't exist, serve a 404 page
-        status = '404 Not Found'
-        response = b"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>404 - File Not Found</title>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    line-height: 1.6;
-                    color: #333;
-                    max-width: 800px;
-                    margin: 0 auto;
-                    padding: 20px;
-                }
-                h1 {
-                    color: #d9534f;
-                }
-                .back-link {
-                    margin-top: 20px;
-                }
-            </style>
-        </head>
-        <body>
-            <h1>404 - File Not Found</h1>
-            <p>The requested file could not be found on this server.</p>
-            <p>The PHP Media Manager is meant to be downloaded and run locally on your Mac.</p>
-            <div class="back-link">
-                <a href="/">Go back to homepage</a>
-            </div>
-        </body>
-        </html>
-        """
-        headers = [
-            ('Content-Type', 'text/html'),
-            ('Content-Length', str(len(response)))
-        ]
-        start_response(status, headers)
-        
-        return [response]
+        else:
+            # File not found
+            status = '404 Not Found'
+            response = b"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>404 - File Not Found</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        line-height: 1.6;
+                        color: #333;
+                        max-width: 800px;
+                        margin: 0 auto;
+                        padding: 20px;
+                    }
+                    h1 {
+                        color: #d9534f;
+                    }
+                    .back-link {
+                        margin-top: 20px;
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>404 - File Not Found</h1>
+                <p>The requested file could not be found on this server.</p>
+                <p>The PHP Media Manager is meant to be downloaded and run locally on your Mac.</p>
+                <div class="back-link">
+                    <a href="/">Go back to homepage</a>
+                </div>
+            </body>
+            </html>
+            """
+            headers = [
+                ('Content-Type', 'text/html'),
+                ('Content-Length', str(len(response)))
+            ]
+            start_response(status, headers)
+            return [response]

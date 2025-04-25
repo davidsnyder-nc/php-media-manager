@@ -17,8 +17,8 @@ echo "Starting PHP Media Manager..."
 echo "Once the server starts, access the application at: http://localhost:8000"
 echo "Press Ctrl+C to stop the server"
 
-# Start the PHP server
-php -S localhost:8000
+# Start the PHP server with router
+php -S localhost:8000 router.php
 
 # This will only execute if the PHP server is stopped
 echo "PHP server stopped. Press any key to exit..."

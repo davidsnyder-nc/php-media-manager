@@ -20,7 +20,7 @@ mkdir -p temp_package
 
 # Copy all PHP files
 echo "Copying PHP files..."
-cp -R api.php config.php index.php movie_details.php radarr.php sabnzbd.php settings.php show_details.php phpinfo.php main.py temp_package/
+cp -R api.php config.php index.php movie_details.php radarr.php sabnzbd.php settings.php show_details.php phpinfo.php main.py router.php temp_package/
 
 # Copy directories
 echo "Copying includes, CSS, and JavaScript..."

@@ -1,6 +1,23 @@
 <?php
+/**
+ * PHP Media Manager - Main Entry Point
+ * 
+ * This file serves as the main entry point for the PHP Media Manager application.
+ * It loads necessary configurations and displays the dashboard.
+ */
+
 require_once 'config.php';
 require_once 'includes/functions.php';
+
+// Determine which page to load
+$requestUri = $_SERVER['REQUEST_URI'];
+$scriptName = $_SERVER['SCRIPT_NAME'];
+
+// Get the route path
+$basePath = dirname($scriptName);
+if ($basePath == '/') $basePath = '';  // Adjust for root installs
+$path = str_replace($basePath, '', $requestUri);
+$path = preg_replace('/\?.*$/', '', $path);  // Remove query string
 
 // Load settings from the config file
 $settings = loadSettings();
