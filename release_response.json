@@ -1,9 +1,9 @@
 {
-  "url": "https://api.github.com/repos/davidsnyder-nc/php-media-manager/releases/214872190",
-  "assets_url": "https://api.github.com/repos/davidsnyder-nc/php-media-manager/releases/214872190/assets",
-  "upload_url": "https://uploads.github.com/repos/davidsnyder-nc/php-media-manager/releases/214872190/assets{?name,label}",
-  "html_url": "https://github.com/davidsnyder-nc/php-media-manager/releases/tag/v2025.04.25.1941",
-  "id": 214872190,
+  "url": "https://api.github.com/repos/davidsnyder-nc/php-media-manager/releases/214873592",
+  "assets_url": "https://api.github.com/repos/davidsnyder-nc/php-media-manager/releases/214873592/assets",
+  "upload_url": "https://uploads.github.com/repos/davidsnyder-nc/php-media-manager/releases/214873592/assets{?name,label}",
+  "html_url": "https://github.com/davidsnyder-nc/php-media-manager/releases/tag/v2025.04.25.1951",
+  "id": 214873592,
   "author": {
     "login": "davidsnyder-nc",
     "id": 178180347,
@@ -25,18 +25,18 @@
     "user_view_type": "public",
     "site_admin": false
   },
-  "node_id": "RE_kwDOOfqXX84MzrB-",
-  "tag_name": "v2025.04.25.1941",
+  "node_id": "RE_kwDOOfqXX84MzrX4",
+  "tag_name": "v2025.04.25.1951",
   "target_commitish": "main",
-  "name": "Release v2025.04.25.1941",
+  "name": "Release v2025.04.25.1951",
   "draft": false,
   "prerelease": false,
   "created_at": "2025-04-25T14:59:43Z",
-  "published_at": "2025-04-25T19:41:40Z",
+  "published_at": "2025-04-25T19:51:39Z",
   "assets": [
 
   ],
-  "tarball_url": "https://api.github.com/repos/davidsnyder-nc/php-media-manager/tarball/v2025.04.25.1941",
-  "zipball_url": "https://api.github.com/repos/davidsnyder-nc/php-media-manager/zipball/v2025.04.25.1941",
-  "body": "# Release v2025.04.25.1941\n\n## What's New\n\n- **Front Page Improvements**:\n  - Fixed \"Upcoming Episodes\" section to fill the entire width of its container\n  - Changed \"Recently Added\" tabs to show \"Recently Downloaded\" content\n  - Added new functions to fetch and display recently downloaded content from SABnzbd\n  - Enhanced display of downloaded TV shows and movies on front page\n\n- **User Interface Improvements**:\n  - Added real-time SABnzbd queue auto-update functionality (refreshes every 10 seconds)\n  - Fixed button alignment on small displays\n  - Improved width handling for the 'Upcoming Episodes' section\n  - Enhanced AJAX-based queue management (pause, resume, delete) without page reloads\n\n- **Performance Enhancements**: \n  - Added server-side image caching system to reduce API requests\n  - Implemented browser-side caching with proper cache headers\n  - Added lazy loading with IntersectionObserver to load images only when visible\n  - Applied GPU acceleration hints for smoother rendering\n  - Created image preloading for images that will soon enter the viewport\n\n- **API Enhancements**:\n  - Added new API endpoint for retrieving SABnzbd queue data\n  - Added function to get recently downloaded content from SABnzbd history\n  - Improved error handling across all API endpoints\n\n## Files\n\n- **Full Package**: php-media-manager.zip - Complete website with all dependencies\n"
+  "tarball_url": "https://api.github.com/repos/davidsnyder-nc/php-media-manager/tarball/v2025.04.25.1951",
+  "zipball_url": "https://api.github.com/repos/davidsnyder-nc/php-media-manager/zipball/v2025.04.25.1951",
+  "body": "# Release v2025.04.25.1951\n\n## What's New\n\n- **Front Page Improvements**:\n  - Fixed \"Upcoming Episodes\" section to fill the entire width of its container\n  - Changed \"Recently Added\" tabs to show \"Recently Downloaded\" content\n  - Added new functions to fetch and display recently downloaded content from SABnzbd\n  - Enhanced display of downloaded TV shows and movies on front page\n\n- **User Interface Improvements**:\n  - Added real-time SABnzbd queue auto-update functionality (refreshes every 10 seconds)\n  - Fixed button alignment on small displays\n  - Improved width handling for the 'Upcoming Episodes' section\n  - Enhanced AJAX-based queue management (pause, resume, delete) without page reloads\n\n- **Performance Enhancements**: \n  - Added server-side image caching system to reduce API requests\n  - Implemented browser-side caching with proper cache headers\n  - Added lazy loading with IntersectionObserver to load images only when visible\n  - Applied GPU acceleration hints for smoother rendering\n  - Created image preloading for images that will soon enter the viewport\n\n- **API Enhancements**:\n  - Added new API endpoint for retrieving SABnzbd queue data\n  - Added function to get recently downloaded content from SABnzbd history\n  - Improved error handling across all API endpoints\n\n## Files\n\n- **Full Package**: php-media-manager.zip - Complete website with all dependencies\n"
 }

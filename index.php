@@ -188,13 +188,41 @@ require_once 'includes/header.php';
                                 else:
                                     $recentTvShows = array_slice($recentTvShows, 0, 6);
                                     foreach ($recentTvShows as $download): 
+                                        $hasImage = !empty($download['image']);
+                                        $showTitle = !empty($download['clean_name']) ? $download['clean_name'] : $download['name'];
+                                        
+                                        // If there are multiple episodes, add count to the title
+                                        $episodeInfo = '';
+                                        if (isset($download['episodes_count']) && $download['episodes_count'] > 1) {
+                                            $episodeInfo = ' <span class="badge bg-primary">' . $download['episodes_count'] . ' episodes</span>';
+                                        } elseif (isset($download['season']) && isset($download['episode'])) {
+                                            $episodeInfo = ' <span class="text-muted">S' . str_pad($download['season'], 2, '0', STR_PAD_LEFT) . 
+                                                'E' . str_pad($download['episode'], 2, '0', STR_PAD_LEFT) . '</span>';
+                                        }
                                 ?>
                                     <div class="media-item">
                                         <div class="download-item">
-                                            <div class="media-poster no-image">
-                                                <i class="fa fa-tv"></i>
+                                            <?php if (isset($download['show_id'])): ?>
+                                            <a href="show_details.php?id=<?php echo $download['show_id']; ?>" class="text-decoration-none">
+                                            <?php endif; ?>
+                                            
+                                            <?php if ($hasImage): ?>
+                                                <div class="media-poster" style="background-image: url('<?php echo htmlspecialchars($download['image']); ?>')"></div>
+                                            <?php else: ?>
+                                                <div class="media-poster no-image">
+                                                    <i class="fa fa-tv"></i>
+                                                </div>
+                                            <?php endif; ?>
+                                            
+                                            <div class="media-title">
+                                                <?php echo htmlspecialchars($showTitle); ?>
+                                                <?php echo $episodeInfo; ?>
                                             </div>
-                                            <div class="media-title"><?php echo htmlspecialchars($download['name']); ?></div>
+                                            
+                                            <?php if (isset($download['show_id'])): ?>
+                                            </a>
+                                            <?php endif; ?>
+                                            
                                             <div class="media-year"><?php echo date('M j, Y', strtotime($download['completed'])); ?></div>
                                         </div>
                                     </div>
@@ -243,13 +271,33 @@ require_once 'includes/header.php';
                                 else:
                                     $recentMovieDownloads = array_slice($recentMovieDownloads, 0, 12);
                                     foreach ($recentMovieDownloads as $download): 
+                                        $hasImage = !empty($download['image']);
+                                        $movieTitle = !empty($download['clean_name']) ? $download['clean_name'] : $download['name'];
+                                        $movieYear = isset($download['year']) ? ' (' . $download['year'] . ')' : '';
                                 ?>
                                     <div class="media-item">
                                         <div class="download-item">
-                                            <div class="media-poster no-image">
-                                                <i class="fa fa-film"></i>
+                                            <?php if (isset($download['movie_id'])): ?>
+                                            <a href="movie_details.php?id=<?php echo $download['movie_id']; ?>" class="text-decoration-none">
+                                            <?php endif; ?>
+                                            
+                                            <?php if ($hasImage): ?>
+                                                <div class="media-poster" style="background-image: url('<?php echo htmlspecialchars($download['image']); ?>')"></div>
+                                            <?php else: ?>
+                                                <div class="media-poster no-image">
+                                                    <i class="fa fa-film"></i>
+                                                </div>
+                                            <?php endif; ?>
+                                            
+                                            <div class="media-title">
+                                                <?php echo htmlspecialchars($movieTitle); ?>
+                                                <?php echo $movieYear; ?>
                                             </div>
-                                            <div class="media-title"><?php echo htmlspecialchars($download['name']); ?></div>
+                                            
+                                            <?php if (isset($download['movie_id'])): ?>
+                                            </a>
+                                            <?php endif; ?>
+                                            
                                             <div class="media-year"><?php echo date('M j, Y', strtotime($download['completed'])); ?></div>
                                         </div>
                                     </div>
