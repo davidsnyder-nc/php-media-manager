@@ -1,6 +1,12 @@
-# Release v2025.04.25.1501
+# Release v2025.04.25.1931
 
 ## What's New
+
+- **User Interface Improvements**:
+  - Added real-time SABnzbd queue auto-update functionality (refreshes every 10 seconds)
+  - Fixed button alignment on small displays
+  - Improved width handling for the 'Upcoming Episodes' section
+  - Enhanced AJAX-based queue management (pause, resume, delete) without page reloads
 
 - **Performance Enhancements**: 
   - Added server-side image caching system to reduce API requests
@@ -13,8 +19,9 @@
   - Improved download package with cache directory structure
   - Added empty cache/images directory to package for immediate use
 
-- **Bug Fixes**:
-  - Fixed issues with repeated API calls for the same images
+- **API Enhancements**:
+  - Added new API endpoint for retrieving SABnzbd queue data
+  - Improved error handling across all API endpoints
 
 ## Files
 

@@ -82,25 +82,34 @@ require_once 'includes/header.php';
         <section class="sabnzbd-section">
             <div class="section-header">
                 <h2>Download Queue</h2>
-                <?php if (!empty($queueData) && !empty($queueData['slots'])): ?>
-                    <div class="section-actions">
-                        <a href="api.php?action=pause_queue" class="btn btn-sm btn-warning" data-action="pause-queue">
-                            <i class="fa fa-pause"></i> Pause Queue
-                        </a>
-                        <a href="api.php?action=resume_queue" class="btn btn-sm btn-success" data-action="resume-queue">
-                            <i class="fa fa-play"></i> Resume Queue
-                        </a>
+                <div class="d-flex align-items-center">
+                    <div id="auto-refresh-status" class="me-3">
+                        <small class="text-muted">
+                            <i class="fa fa-sync-alt fa-spin me-1"></i> 
+                            Auto-refreshing
+                        </small>
                     </div>
-                <?php endif; ?>
+                    <?php if (!empty($queueData) && !empty($queueData['slots'])): ?>
+                        <div class="section-actions">
+                            <a href="api.php?action=pause_queue" class="btn btn-sm btn-warning" data-action="pause-queue">
+                                <i class="fa fa-pause"></i> Pause Queue
+                            </a>
+                            <a href="api.php?action=resume_queue" class="btn btn-sm btn-success" data-action="resume-queue">
+                                <i class="fa fa-play"></i> Resume Queue
+                            </a>
+                        </div>
+                    <?php endif; ?>
+                </div>
             </div>
             
-            <?php if (empty($queueData) || empty($queueData['slots'])): ?>
-                <div class="alert alert-info">
-                    <h4><i class="fa fa-info-circle"></i> Queue Empty</h4>
-                    <p>There are no active downloads in the queue.</p>
-                </div>
-            <?php else: ?>
-                <div class="queue-list">
+            <div id="queue-content">
+                <?php if (empty($queueData) || empty($queueData['slots'])): ?>
+                    <div class="alert alert-info">
+                        <h4><i class="fa fa-info-circle"></i> Queue Empty</h4>
+                        <p>There are no active downloads in the queue.</p>
+                    </div>
+                <?php else: ?>
+                    <div class="queue-list">
                     <?php foreach ($queueData['slots'] as $slot): ?>
                         <div class="queue-item">
                             <div class="item-header">
@@ -258,3 +267,198 @@ require_once 'includes/header.php';
 </div>
 
 <?php require_once 'includes/footer.php'; ?>
+
+<script>
+// Auto-update the SABnzbd queue every 10 seconds
+function setupAutoUpdateSabnzbdQueue() {
+    // Variable to store the auto-update interval ID
+    let updateInterval;
+    
+    // Function to fetch and update the queue data
+    function updateQueueData() {
+        fetch('api.php?action=get_sabnzbd_queue')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.queue) {
+                    // Update the queue content
+                    updateQueueContent(data.queue);
+                }
+            })
+            .catch(error => {
+                console.error('Error updating SABnzbd queue:', error);
+            });
+    }
+    
+    // Function to update the queue content in the DOM
+    function updateQueueContent(queueData) {
+        const queueContent = document.getElementById('queue-content');
+        
+        if (!queueContent) return;
+        
+        // Create the queue HTML content
+        let html = '';
+        
+        if (!queueData.slots || queueData.slots.length === 0) {
+            html = `
+                <div class="alert alert-info">
+                    <h4><i class="fa fa-info-circle"></i> Queue Empty</h4>
+                    <p>There are no active downloads in the queue.</p>
+                </div>
+            `;
+        } else {
+            html = '<div class="queue-list">';
+            
+            queueData.slots.forEach(slot => {
+                const percentage = slot.percentage;
+                const filename = escapeHtml(slot.filename);
+                const size = formatSizeMB(slot.mb);
+                const timeLeft = slot.timeleft || 'N/A';
+                const status = slot.status;
+                const statusClass = status.toLowerCase();
+                
+                html += `
+                    <div class="queue-item">
+                        <div class="item-header">
+                            <h4 class="item-name">${filename}</h4>
+                            <div class="item-actions">
+                                <a href="api.php?action=pause_item&nzo_id=${slot.nzo_id}" class="btn btn-sm btn-outline-warning" data-action="pause-item">
+                                    <i class="fa fa-pause"></i>
+                                </a>
+                                <a href="api.php?action=resume_item&nzo_id=${slot.nzo_id}" class="btn btn-sm btn-outline-success" data-action="resume-item">
+                                    <i class="fa fa-play"></i>
+                                </a>
+                                <a href="api.php?action=delete_item&nzo_id=${slot.nzo_id}" class="btn btn-sm btn-outline-danger" data-action="delete-item" onclick="return confirm('Are you sure you want to delete this download?')">
+                                    <i class="fa fa-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="item-info">
+                            <div class="item-stats">
+                                <span><i class="fa fa-database"></i> ${size}</span>
+                                <span><i class="fa fa-clock"></i> ${timeLeft}</span>
+                                <span class="item-status ${statusClass}">${status}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: ${percentage}%" 
+                                 aria-valuenow="${percentage}" aria-valuemin="0" aria-valuemax="100">
+                                ${percentage}%
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+        }
+        
+        queueContent.innerHTML = html;
+        
+        // Setup action buttons after content update
+        setupActionButtons();
+    }
+    
+    // Helper function to format size (MB to human-readable)
+    function formatSizeMB(mbSize) {
+        const size = parseFloat(mbSize);
+        
+        if (size >= 1024) {
+            return (size / 1024).toFixed(2) + ' GB';
+        } else {
+            return size.toFixed(2) + ' MB';
+        }
+    }
+    
+    // Helper function to escape HTML
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+    
+    // Setup action buttons to use AJAX instead of direct page reload
+    function setupActionButtons() {
+        document.querySelectorAll('[data-action]').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const url = this.getAttribute('href');
+                const action = this.getAttribute('data-action');
+                
+                // If the action requires confirmation and the user cancels, do nothing
+                if ((action === 'delete-item' || action === 'clear-history' || action === 'delete-history-item') && 
+                    !confirm('Are you sure you want to ' + (action === 'delete-item' ? 'delete this download?' : 
+                                                            action === 'delete-history-item' ? 'delete this history item?' : 
+                                                            'clear the history?'))) {
+                    return;
+                }
+                
+                // Perform the action via AJAX
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showAlert('success', data.message);
+                            
+                            // Update queue data immediately after action
+                            updateQueueData();
+                        } else {
+                            showAlert('danger', data.message || 'An error occurred');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error performing action:', error);
+                        showAlert('danger', 'An error occurred while performing the action');
+                    });
+            });
+        });
+    }
+    
+    // Start the auto-update interval
+    updateInterval = setInterval(updateQueueData, 10000); // Update every 10 seconds
+    
+    // Initial setup
+    setupActionButtons();
+    
+    // Return a function to stop the auto-updates
+    return function stopAutoUpdate() {
+        clearInterval(updateInterval);
+    };
+}
+
+// Initialize the auto-update feature
+document.addEventListener('DOMContentLoaded', function() {
+    const stopAutoUpdate = setupAutoUpdateSabnzbdQueue();
+    
+    // Stop auto-update when leaving the page
+    window.addEventListener('beforeunload', stopAutoUpdate);
+});
+
+// Function to show alerts
+function showAlert(type, message, timeout = 5000) {
+    // Create alert element
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.role = 'alert';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    // Add to the top of the content area
+    const contentArea = document.querySelector('.content');
+    if (contentArea) {
+        contentArea.insertBefore(alertDiv, contentArea.firstChild);
+        
+        // Auto dismiss after timeout
+        if (timeout > 0) {
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+                setTimeout(() => alertDiv.remove(), 150);
+            }, timeout);
+        }
+    }
+}
+</script>
