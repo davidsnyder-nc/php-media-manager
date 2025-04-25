@@ -48,7 +48,15 @@ if ($hasAllSettings) {
     // Get SABnzbd data
     if (!empty($settings['sabnzbd_url']) && !empty($settings['sabnzbd_api_key'])) {
         $sabnzbdData = getSabnzbdQueue($settings['sabnzbd_url'], $settings['sabnzbd_api_key']);
-        $recentDownloads = getRecentlyDownloadedContent($settings['sabnzbd_url'], $settings['sabnzbd_api_key'], 12);
+        $recentDownloads = getRecentlyDownloadedContent(
+            $settings['sabnzbd_url'], 
+            $settings['sabnzbd_api_key'], 
+            12,
+            $settings['sonarr_url'] ?? '', 
+            $settings['sonarr_api_key'] ?? '',
+            $settings['radarr_url'] ?? '', 
+            $settings['radarr_api_key'] ?? ''
+        );
     }
 }
 

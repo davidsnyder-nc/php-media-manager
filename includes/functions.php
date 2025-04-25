@@ -422,13 +422,17 @@ function getSabnzbdHistory($url, $apiKey, $page = 1, $limit = 10) {
  * @param string $url SABnzbd base URL
  * @param string $apiKey SABnzbd API key
  * @param int $limit Number of items to return
+ * @param string $sonarrUrl Sonarr URL for TV show metadata
+ * @param string $sonarrApiKey Sonarr API key
+ * @param string $radarrUrl Radarr URL for movie metadata
+ * @param string $radarrApiKey Radarr API key
  * @return array Recently completed downloads
  */
-function getRecentlyDownloadedContent($url, $apiKey, $limit = 6) {
+function getRecentlyDownloadedContent($url, $apiKey, $limit = 6, $sonarrUrl = '', $sonarrApiKey = '', $radarrUrl = '', $radarrApiKey = '') {
     $response = makeApiRequest($url, 'api', [
         'mode' => 'history',
         'output' => 'json',
-        'limit' => $limit
+        'limit' => 30 // Get more items initially so we can consolidate them
     ], $apiKey);
     
     if (isset($response['history']) && isset($response['history']['slots'])) {
@@ -437,26 +441,159 @@ function getRecentlyDownloadedContent($url, $apiKey, $limit = 6) {
             return $item['status'] === 'Completed';
         });
         
-        // Categorize downloads as TV shows or movies
+        // Get TV shows and movies for matching
+        $tvShows = [];
+        $movies = [];
+        
+        if (!empty($sonarrUrl) && !empty($sonarrApiKey)) {
+            $tvShows = getSonarrShows($sonarrUrl, $sonarrApiKey);
+        }
+        
+        if (!empty($radarrUrl) && !empty($radarrApiKey)) {
+            $movies = getRadarrMovies($radarrUrl, $radarrApiKey);
+        }
+        
+        // Process and categorize downloads
+        $processedDownloads = [];
+        $tvShowsByName = [];
+        $moviesByName = [];
+        
         foreach ($downloads as &$download) {
+            // Determine content type
+            $type = 'other';
             if (isset($download['category'])) {
                 $category = strtolower($download['category']);
                 if (strpos($category, 'tv') !== false || strpos($category, 'show') !== false || strpos($category, 'series') !== false) {
-                    $download['type'] = 'tv';
+                    $type = 'tv';
                 } elseif (strpos($category, 'movie') !== false || strpos($category, 'film') !== false) {
-                    $download['type'] = 'movie';
-                } else {
-                    $download['type'] = 'other';
+                    $type = 'movie';
+                }
+            }
+            
+            $download['type'] = $type;
+            
+            // For TV shows, extract show name from the download name
+            if ($type === 'tv') {
+                // Extract show name using common patterns like "Show.Name.S01E01.etc"
+                $name = $download['name'];
+                
+                // Try to match "Show.Name.S01E01" or "Show.Name.1x01"
+                if (preg_match('/^(.*?)[\.|\s][sS](\d+)[eE](\d+)/', $name, $matches) || 
+                    preg_match('/^(.*?)[\.|\s](\d+)x(\d+)/', $name, $matches)) {
+                    $showName = trim(str_replace(['.', '_'], ' ', $matches[1]));
+                    $season = intval($matches[2]);
+                    $episode = intval($matches[3]);
+                    
+                    // Try to find the show in Sonarr data
+                    foreach ($tvShows as $show) {
+                        $showTitle = strtolower(trim($show['title']));
+                        $matchShowName = strtolower($showName);
+                        
+                        if ($showTitle === $matchShowName || 
+                            strpos($showTitle, $matchShowName) === 0 || 
+                            strpos($matchShowName, $showTitle) === 0) {
+                            
+                            // If we haven't seen this show before, or this is a newer download
+                            if (!isset($tvShowsByName[$showTitle]) || 
+                                strtotime($download['completed']) > strtotime($tvShowsByName[$showTitle]['completed'])) {
+                                
+                                $tvShowsByName[$showTitle] = $download;
+                                $tvShowsByName[$showTitle]['clean_name'] = $show['title'];
+                                $tvShowsByName[$showTitle]['show_id'] = $show['id'];
+                                $tvShowsByName[$showTitle]['season'] = $season;
+                                $tvShowsByName[$showTitle]['episode'] = $episode;
+                                $tvShowsByName[$showTitle]['image'] = isset($show['images']) ? getPosterUrl($show['images']) : '';
+                                $tvShowsByName[$showTitle]['episodes_count'] = 1;
+                            } else {
+                                // Increment episode count for existing show
+                                $tvShowsByName[$showTitle]['episodes_count']++;
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            // For movies, try to match with Radarr
+            else if ($type === 'movie') {
+                $name = $download['name'];
+                
+                // Try to clean up movie name using common patterns
+                if (preg_match('/^(.*?)[\.\s]\d{4}/', $name, $matches)) {
+                    $movieName = trim(str_replace(['.', '_'], ' ', $matches[1]));
+                    
+                    // Try to find movie in Radarr data
+                    foreach ($movies as $movie) {
+                        $movieTitle = strtolower(trim($movie['title']));
+                        $matchMovieName = strtolower($movieName);
+                        
+                        if ($movieTitle === $matchMovieName || 
+                            strpos($movieTitle, $matchMovieName) === 0 || 
+                            strpos($matchMovieName, $movieTitle) === 0) {
+                            
+                            $download['clean_name'] = $movie['title'];
+                            $download['movie_id'] = $movie['id'];
+                            $download['image'] = isset($movie['images']) ? getPosterUrl($movie['images']) : '';
+                            $download['year'] = isset($movie['year']) ? $movie['year'] : '';
+                            
+                            $moviesByName[$movieTitle] = $download;
+                            break;
+                        }
+                    }
+                }
+                
+                // If we couldn't match the movie, still add it with original name
+                if (!isset($download['clean_name'])) {
+                    $processedDownloads[] = $download;
                 }
             } else {
-                $download['type'] = 'other';
+                // Other content types
+                $processedDownloads[] = $download;
             }
         }
         
-        return $downloads;
+        // Combine processed downloads
+        $processedDownloads = array_merge(
+            $processedDownloads, 
+            array_values($tvShowsByName), 
+            array_values($moviesByName)
+        );
+        
+        // Sort by completed date (newest first)
+        usort($processedDownloads, function($a, $b) {
+            return strtotime($b['completed']) - strtotime($a['completed']);
+        });
+        
+        // Apply limit to the final result
+        return array_slice($processedDownloads, 0, $limit);
     }
     
     return [];
+}
+
+/**
+ * Get the poster URL from an array of images
+ * 
+ * @param array $images Array of image data
+ * @return string URL of the poster image or empty string
+ */
+function getPosterUrl($images) {
+    if (!is_array($images)) {
+        return '';
+    }
+    
+    // Look for an image with coverType='poster'
+    foreach ($images as $image) {
+        if (isset($image['coverType']) && $image['coverType'] === 'poster' && isset($image['remoteUrl'])) {
+            return $image['remoteUrl'];
+        }
+    }
+    
+    // If no poster found but there are images, return the first one
+    if (!empty($images) && isset($images[0]['remoteUrl'])) {
+        return $images[0]['remoteUrl'];
+    }
+    
+    return '';
 }
 
 /**
