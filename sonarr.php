@@ -18,11 +18,33 @@ $shows = [];
 if (!empty($settings['sonarr_url']) && !empty($settings['sonarr_api_key'])) {
     $shows = getSonarrShows($settings['sonarr_url'], $settings['sonarr_api_key']);
     
-    // Apply search filter if provided
+    // Search for shows
+    $externalSearchResults = [];
     if (!empty($searchTerm)) {
-        $shows = array_filter($shows, function($show) use ($searchTerm) {
+        // First, filter existing shows
+        $existingShows = array_filter($shows, function($show) use ($searchTerm) {
             return stripos($show['title'], $searchTerm) !== false;
         });
+        
+        // Then, search for new shows via API
+        $searchResults = searchSonarrShows($settings['sonarr_url'], $settings['sonarr_api_key'], $searchTerm);
+        
+        if (!empty($searchResults) && is_array($searchResults)) {
+            // Get IDs of existing shows for comparison
+            $existingIds = array_map(function($show) {
+                return $show['tvdbId'] ?? 0;
+            }, $shows);
+            
+            // Filter out shows that are already in library
+            $externalSearchResults = array_filter($searchResults, function($result) use ($existingIds) {
+                return !in_array($result['tvdbId'] ?? 0, $existingIds);
+            });
+            
+            // Use existing shows as the primary display list
+            $shows = $existingShows;
+        } else {
+            $shows = $existingShows;
+        }
     }
     
     // Apply status filter if provided
@@ -97,41 +119,85 @@ require_once 'includes/header.php';
             <p>Please configure your Sonarr API settings to view TV shows.</p>
             <a href="settings.php" class="btn btn-primary">Go to Settings</a>
         </div>
-    <?php elseif (empty($shows)): ?>
+    <?php elseif (empty($shows) && empty($externalSearchResults)): ?>
         <div class="alert alert-info">
             <h4><i class="fa fa-info-circle"></i> No TV Shows Found</h4>
             <p>No TV shows match your criteria or there was an error connecting to Sonarr.</p>
         </div>
     <?php else: ?>
-        <div class="show-count">
-            Showing <?php echo count($shows); ?> TV shows
-        </div>
-        
-        <div class="media-grid">
-            <?php foreach ($shows as $show): ?>
-                <div class="media-item">
-                    <a href="show_details.php?id=<?php echo $show['id']; ?>">
-                        <?php if (!empty($show['images'])): ?>
-                            <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($show); ?>');"></div>
-                        <?php else: ?>
-                            <div class="media-poster no-image">
-                                <i class="fa fa-tv"></i>
+        <?php if (!empty($shows)): ?>
+            <div class="show-count">
+                Showing <?php echo count($shows); ?> TV shows in your library
+            </div>
+            
+            <div class="media-grid">
+                <?php foreach ($shows as $show): ?>
+                    <div class="media-item">
+                        <a href="show_details.php?id=<?php echo $show['id']; ?>">
+                            <?php if (!empty($show['images'])): ?>
+                                <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($show); ?>');"></div>
+                            <?php else: ?>
+                                <div class="media-poster no-image">
+                                    <i class="fa fa-tv"></i>
+                                </div>
+                            <?php endif; ?>
+                            <div class="media-title"><?php echo htmlspecialchars($show['title']); ?></div>
+                            <div class="media-info">
+                                <?php if (isset($show['year'])): ?>
+                                    <span class="media-year"><?php echo $show['year']; ?></span>
+                                <?php endif; ?>
+                                <?php if (isset($show['status'])): ?>
+                                    <span class="media-status <?php echo strtolower($show['status']); ?>">
+                                        <?php echo $show['status']; ?>
+                                    </span>
+                                <?php endif; ?>
                             </div>
-                        <?php endif; ?>
-                        <div class="media-title"><?php echo htmlspecialchars($show['title']); ?></div>
-                        <div class="media-info">
-                            <?php if (isset($show['year'])): ?>
-                                <span class="media-year"><?php echo $show['year']; ?></span>
-                            <?php endif; ?>
-                            <?php if (isset($show['status'])): ?>
-                                <span class="media-status <?php echo strtolower($show['status']); ?>">
-                                    <?php echo $show['status']; ?>
-                                </span>
-                            <?php endif; ?>
+                        </a>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+        
+        <?php if (!empty($externalSearchResults)): ?>
+            <div class="mt-5">
+                <h3>Available to Add</h3>
+                <p class="text-muted">The following TV shows are not in your library but match your search.</p>
+                
+                <div class="media-grid">
+                    <?php foreach ($externalSearchResults as $show): ?>
+                        <div class="media-item">
+                            <div class="position-relative">
+                                <?php if (!empty($show['images'])): ?>
+                                    <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($show); ?>');"></div>
+                                <?php else: ?>
+                                    <div class="media-poster no-image">
+                                        <i class="fa fa-tv"></i>
+                                    </div>
+                                <?php endif; ?>
+                                <form method="post" action="api.php" class="add-media-form">
+                                    <input type="hidden" name="action" value="add_show">
+                                    <input type="hidden" name="tvdbId" value="<?php echo $show['tvdbId'] ?? ''; ?>">
+                                    <button type="submit" class="btn btn-sm btn-success add-media-btn">
+                                        <i class="fa fa-plus"></i> Add
+                                    </button>
+                                </form>
+                                <div class="media-title"><?php echo htmlspecialchars($show['title']); ?></div>
+                                <div class="media-info">
+                                    <?php if (isset($show['year'])): ?>
+                                        <span class="media-year"><?php echo $show['year']; ?></span>
+                                    <?php endif; ?>
+                                    <?php if (isset($show['status'])): ?>
+                                        <span class="media-status <?php echo strtolower($show['status']); ?>">
+                                            <?php echo $show['status']; ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
                         </div>
-                    </a>
+                    <?php endforeach; ?>
                 </div>
-            <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
         </div>
     <?php endif; ?>
 </div>

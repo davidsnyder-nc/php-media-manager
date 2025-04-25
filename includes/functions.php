@@ -15,20 +15,37 @@
  * @param array $postData Data to send in POST requests
  * @return array|bool The decoded response or false on failure
  */
-function makeApiRequest($url, $endpoint, $params = [], $apiKey = '', $method = 'GET', $postData = []) {
+function makeApiRequest($url, $endpoint, $params = [], $apiKey = '', $method = 'GET', $postData = [], $jsonData = true) {
     // Ensure URL ends with a slash
     $url = rtrim($url, '/') . '/';
     $endpoint = ltrim($endpoint, '/');
     
-    // Add API key to parameters if provided
-    if (!empty($apiKey)) {
+    // Initialize headers array
+    $headers = [];
+    
+    // Determine where to put the API key based on the API
+    if (strpos($endpoint, 'api/v3') === 0 && !empty($apiKey)) {
+        // For Sonarr/Radarr API v3, use header
+        $headers[] = 'X-Api-Key: ' . $apiKey;
+    } else if (!empty($apiKey)) {
+        // For other APIs, use as parameter
         $params['apikey'] = $apiKey;
     }
     
-    // Build the complete URL with query parameters
-    $fullUrl = $url . $endpoint;
-    if (!empty($params)) {
-        $fullUrl .= (strpos($fullUrl, '?') === false ? '?' : '&') . http_build_query($params);
+    // For GET requests, combine parameters and API key in URL
+    if ($method === 'GET' || $method === 'DELETE') {
+        // Build the complete URL with query parameters
+        $fullUrl = $url . $endpoint;
+        if (!empty($params)) {
+            $fullUrl .= (strpos($fullUrl, '?') === false ? '?' : '&') . http_build_query($params);
+        }
+    } else {
+        // For POST/PUT, keep URL clean and use params as data if no postData provided
+        $fullUrl = $url . $endpoint;
+        if (empty($postData) && !empty($params) && $method !== 'GET') {
+            $postData = $params;
+            $params = []; // Clear params since we're using them as postData
+        }
     }
     
     // Initialize cURL session
@@ -38,36 +55,57 @@ function makeApiRequest($url, $endpoint, $params = [], $apiKey = '', $method = '
     curl_setopt($ch, CURLOPT_URL, $fullUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30); // Increased timeout for larger operations
     
     // Set method and data for POST/PUT requests
     if ($method === 'POST') {
         curl_setopt($ch, CURLOPT_POST, true);
         if (!empty($postData)) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            if ($jsonData) {
+                $headers[] = 'Content-Type: application/json';
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+            } else {
+                curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
+            }
         }
     } elseif ($method === 'PUT') {
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
         if (!empty($postData)) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            if ($jsonData) {
+                $headers[] = 'Content-Type: application/json';
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+            } else {
+                curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
+            }
         }
     } elseif ($method === 'DELETE') {
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+    }
+    
+    // Set headers if any
+    if (!empty($headers)) {
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     }
     
     // Execute the cURL request
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     
-    // Check for errors
-    if (curl_errno($ch) || $httpCode >= 400) {
-        curl_close($ch);
-        return false;
-    }
+    // For debugging
+    $error = curl_error($ch);
     
     curl_close($ch);
+    
+    // Check for errors
+    if ($error || $httpCode >= 400) {
+        // Return error info as an array
+        return [
+            'error' => true,
+            'http_code' => $httpCode,
+            'message' => $error ?: 'HTTP Error ' . $httpCode,
+            'response' => $response
+        ];
+    }
     
     // Decode and return the response
     $decodedResponse = json_decode($response, true);

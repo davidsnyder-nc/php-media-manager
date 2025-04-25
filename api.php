@@ -2,8 +2,10 @@
 require_once 'config.php';
 require_once 'includes/functions.php';
 
-// Set header to JSON response
-header('Content-Type: application/json');
+// Set header to JSON response (unless we're handling image proxy)
+if (!isset($_GET['action']) || $_GET['action'] !== 'proxy_image') {
+    header('Content-Type: application/json');
+}
 
 // Load settings from the config file
 $settings = loadSettings();
@@ -14,9 +16,16 @@ $response = [
     'message' => 'Invalid request'
 ];
 
-// Check if action parameter exists
+// Get action from GET or POST
+$action = '';
 if (isset($_GET['action'])) {
     $action = $_GET['action'];
+} elseif (isset($_POST['action'])) {
+    $action = $_POST['action'];
+}
+
+// Process the action if provided
+if (!empty($action)) {
     
     // SABnzbd API actions
     if (strpos($action, 'sabnzbd_') === 0 || in_array($action, ['pause_queue', 'resume_queue', 'pause_item', 'resume_item', 'delete_item', 'clear_history', 'retry_item', 'delete_history_item'])) {
@@ -136,7 +145,150 @@ if (isset($_GET['action'])) {
             }
         }
     }
-    // Add more API actions for Sonarr and Radarr if needed
+    // Actions to add shows and movies
+    else if ($action === 'add_show') {
+        // Check if Sonarr settings are configured
+        if (empty($settings['sonarr_url']) || empty($settings['sonarr_api_key'])) {
+            $response = [
+                'success' => false,
+                'message' => 'Sonarr API settings not configured'
+            ];
+        } else if (!isset($_POST['tvdbId']) || empty($_POST['tvdbId'])) {
+            $response = [
+                'success' => false,
+                'message' => 'Missing tvdbId parameter'
+            ];
+        } else {
+            // Search for the show to get its details
+            $searchResults = makeApiRequest(
+                $settings['sonarr_url'], 
+                'api/v3/series/lookup', 
+                ['term' => 'tvdb:' . $_POST['tvdbId']], 
+                $settings['sonarr_api_key']
+            );
+            
+            if (!empty($searchResults) && isset($searchResults[0])) {
+                $show = $searchResults[0];
+                
+                // Prepare the show data for adding to Sonarr
+                $showData = [
+                    'tvdbId' => $show['tvdbId'],
+                    'title' => $show['title'],
+                    'qualityProfileId' => 1, // Default quality profile
+                    'languageProfileId' => 1, // Default language profile
+                    'images' => $show['images'],
+                    'seasons' => $show['seasons'],
+                    'year' => $show['year'],
+                    'rootFolderPath' => '/tv', // Default root folder
+                    'monitored' => true,
+                    'addOptions' => [
+                        'searchForMissingEpisodes' => true,
+                        'searchForCutoffUnmetEpisodes' => false
+                    ]
+                ];
+                
+                // Add the show to Sonarr
+                $result = makeApiRequest(
+                    $settings['sonarr_url'], 
+                    'api/v3/series', 
+                    $showData, 
+                    $settings['sonarr_api_key'], 
+                    'POST', 
+                    true
+                );
+                
+                if (isset($result['id'])) {
+                    $response = [
+                        'success' => true,
+                        'message' => 'Show added successfully',
+                        'show' => $result
+                    ];
+                } else {
+                    $response = [
+                        'success' => false,
+                        'message' => 'Failed to add show to Sonarr',
+                        'error' => $result
+                    ];
+                }
+            } else {
+                $response = [
+                    'success' => false,
+                    'message' => 'Failed to find show details'
+                ];
+            }
+        }
+    }
+    else if ($action === 'add_movie') {
+        // Check if Radarr settings are configured
+        if (empty($settings['radarr_url']) || empty($settings['radarr_api_key'])) {
+            $response = [
+                'success' => false,
+                'message' => 'Radarr API settings not configured'
+            ];
+        } else if (!isset($_POST['tmdbId']) || empty($_POST['tmdbId'])) {
+            $response = [
+                'success' => false,
+                'message' => 'Missing tmdbId parameter'
+            ];
+        } else {
+            // Search for the movie to get its details
+            $searchResults = makeApiRequest(
+                $settings['radarr_url'], 
+                'api/v3/movie/lookup/tmdb', 
+                ['tmdbId' => $_POST['tmdbId']], 
+                $settings['radarr_api_key']
+            );
+            
+            if (!empty($searchResults) && isset($searchResults['tmdbId'])) {
+                $movie = $searchResults;
+                
+                // Prepare the movie data for adding to Radarr
+                $movieData = [
+                    'tmdbId' => $movie['tmdbId'],
+                    'title' => $movie['title'],
+                    'qualityProfileId' => 1, // Default quality profile
+                    'images' => $movie['images'],
+                    'year' => $movie['year'],
+                    'rootFolderPath' => '/movies', // Default root folder
+                    'monitored' => true,
+                    'minimumAvailability' => 'released',
+                    'addOptions' => [
+                        'searchForMovie' => true
+                    ]
+                ];
+                
+                // Add the movie to Radarr
+                $result = makeApiRequest(
+                    $settings['radarr_url'], 
+                    'api/v3/movie', 
+                    $movieData, 
+                    $settings['radarr_api_key'], 
+                    'POST', 
+                    true
+                );
+                
+                if (isset($result['id'])) {
+                    $response = [
+                        'success' => true,
+                        'message' => 'Movie added successfully',
+                        'movie' => $result
+                    ];
+                } else {
+                    $response = [
+                        'success' => false,
+                        'message' => 'Failed to add movie to Radarr',
+                        'error' => $result
+                    ];
+                }
+            } else {
+                $response = [
+                    'success' => false,
+                    'message' => 'Failed to find movie details'
+                ];
+            }
+        }
+    }
+    // Other Sonarr and Radarr actions
     else if (strpos($action, 'sonarr_') === 0) {
         // Check if Sonarr settings are configured
         if (empty($settings['sonarr_url']) || empty($settings['sonarr_api_key'])) {
