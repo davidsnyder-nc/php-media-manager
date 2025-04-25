@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'sabnzbd_url' => trim($_POST['sabnzbd_url']),
         'sabnzbd_api_key' => trim($_POST['sabnzbd_api_key']),
         'theme' => isset($_POST['theme']) ? $_POST['theme'] : 'light',
+        'demo_mode' => isset($_POST['demo_mode']) ? $_POST['demo_mode'] : 'disabled',
     ];
     
     // Validate URLs
@@ -254,6 +255,28 @@ require_once 'includes/header.php';
                                   <?php echo (isset($settings['theme']) && $settings['theme'] === 'dark') ? 'checked' : ''; ?>>
                             <label class="form-check-label" for="theme_dark">
                                 Dark
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h3><i class="fa fa-cubes"></i> Development Options</h3>
+                    <div class="mb-3">
+                        <label class="form-label">Demo Mode</label>
+                        <div class="form-text mb-2">Demo mode displays sample content when API connections are not available or configured.</div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="demo_mode" id="demo_enabled" value="enabled" 
+                                  <?php echo (isset($settings['demo_mode']) && $settings['demo_mode'] === 'enabled') ? 'checked' : ''; ?>>
+                            <label class="form-check-label" for="demo_enabled">
+                                <strong>Enabled</strong> - Show sample data for development and testing
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="demo_mode" id="demo_disabled" value="disabled" 
+                                  <?php echo (!isset($settings['demo_mode']) || $settings['demo_mode'] === 'disabled') ? 'checked' : ''; ?>>
+                            <label class="form-check-label" for="demo_disabled">
+                                <strong>Disabled</strong> - Only show real data from API connections (recommended for production)
                             </label>
                         </div>
                     </div>

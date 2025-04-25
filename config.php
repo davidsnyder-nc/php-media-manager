@@ -41,6 +41,7 @@ function loadSettings() {
         'sabnzbd_url' => '',
         'sabnzbd_api_key' => '',
         'theme' => 'light',
+        'demo_mode' => 'enabled', // Enable demo mode by default for development
     ];
 }
 
@@ -61,7 +62,7 @@ function saveSettings($settings) {
         'sonarr_url', 'sonarr_api_key',
         'radarr_url', 'radarr_api_key',
         'sabnzbd_url', 'sabnzbd_api_key',
-        'theme'
+        'theme', 'demo_mode'
     ];
     
     foreach ($requiredKeys as $key) {
