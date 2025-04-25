@@ -28,7 +28,7 @@ if (isset($_GET['action'])) {
 if (!empty($action)) {
     
     // SABnzbd API actions
-    if (strpos($action, 'sabnzbd_') === 0 || in_array($action, ['pause_queue', 'resume_queue', 'pause_item', 'resume_item', 'delete_item', 'clear_history', 'retry_item', 'delete_history_item'])) {
+    if (strpos($action, 'sabnzbd_') === 0 || in_array($action, ['get_sabnzbd_queue', 'pause_queue', 'resume_queue', 'pause_item', 'resume_item', 'delete_item', 'clear_history', 'retry_item', 'delete_history_item'])) {
         // Check if SABnzbd settings are configured
         if (empty($settings['sabnzbd_url']) || empty($settings['sabnzbd_api_key'])) {
             $response = [
@@ -134,6 +134,15 @@ if (!empty($action)) {
                             'message' => 'Missing nzo_id parameter'
                         ];
                     }
+                    break;
+                    
+                case 'get_sabnzbd_queue':
+                    $queue = getSabnzbdQueue($settings['sabnzbd_url'], $settings['sabnzbd_api_key']);
+                    $response = [
+                        'success' => !empty($queue),
+                        'message' => !empty($queue) ? 'Queue data retrieved successfully' : 'Failed to retrieve queue data',
+                        'queue' => $queue
+                    ];
                     break;
                 
                 default:
