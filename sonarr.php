@@ -135,7 +135,7 @@ require_once 'includes/header.php';
                     <div class="media-item">
                         <a href="show_details.php?id=<?php echo $show['id']; ?>">
                             <?php if (!empty($show['images'])): ?>
-                                <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($show); ?>');"></div>
+                                <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($show); ?>');" data-show-id="<?php echo $show['id']; ?>"></div>
                             <?php else: ?>
                                 <div class="media-poster no-image">
                                     <i class="fa fa-tv"></i>
@@ -168,7 +168,7 @@ require_once 'includes/header.php';
                         <div class="media-item">
                             <div class="position-relative">
                                 <?php if (!empty($show['images'])): ?>
-                                    <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($show); ?>');"></div>
+                                    <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($show); ?>');" data-show-id="<?php echo $show['tvdbId'] ?? ''; ?>"></div>
                                 <?php else: ?>
                                     <div class="media-poster no-image">
                                         <i class="fa fa-tv"></i>

@@ -23,10 +23,13 @@ echo "Copying PHP files..."
 cp -R api.php config.php index.php movie_details.php radarr.php sabnzbd.php sonarr.php settings.php show_details.php phpinfo.php download.php direct_download.php main.py router.php temp_package/
 
 # Copy directories
-echo "Copying includes, CSS, and JavaScript..."
+echo "Copying includes, CSS, JavaScript, and cache structure..."
 cp -R includes temp_package/
 cp -R css temp_package/
 cp -R js temp_package/
+
+# Create cache directory structure
+mkdir -p temp_package/cache/images
 
 # Copy launcher script
 echo "Copying launcher script..."
