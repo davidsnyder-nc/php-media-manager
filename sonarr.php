@@ -5,6 +5,9 @@ require_once 'includes/functions.php';
 // Load settings from the config file
 $settings = loadSettings();
 
+// Check for demo mode
+$demoMode = isset($settings['demo_mode']) && $settings['demo_mode'] === 'enabled';
+
 // Get query parameters for filtering/sorting
 $sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'title';
 $sortOrder = isset($_GET['order']) ? $_GET['order'] : 'asc';
@@ -14,9 +17,9 @@ $statusFilter = isset($_GET['status']) ? $_GET['status'] : '';
 // Initialize array for TV shows
 $shows = [];
 
-// Check if we have necessary settings
-if (!empty($settings['sonarr_url']) && !empty($settings['sonarr_api_key'])) {
-    $shows = getSonarrShows($settings['sonarr_url'], $settings['sonarr_api_key']);
+// Check if we have necessary settings or if demo mode is enabled
+if ($demoMode || (!empty($settings['sonarr_url']) && !empty($settings['sonarr_api_key']))) {
+    $shows = getSonarrShows($settings['sonarr_url'], $settings['sonarr_api_key'], $demoMode);
     
     // Search for shows
     $externalSearchResults = [];
@@ -26,8 +29,12 @@ if (!empty($settings['sonarr_url']) && !empty($settings['sonarr_api_key'])) {
             return stripos($show['title'], $searchTerm) !== false;
         });
         
-        // Then, search for new shows via API
-        $searchResults = searchSonarrShows($settings['sonarr_url'], $settings['sonarr_api_key'], $searchTerm);
+        // Then, search for new shows via API if not in demo mode
+        if (!$demoMode) {
+            $searchResults = searchSonarrShows($settings['sonarr_url'], $settings['sonarr_api_key'], $searchTerm);
+        } else {
+            $searchResults = []; // In demo mode, just use the existing shows
+        }
         
         if (!empty($searchResults) && is_array($searchResults)) {
             // Get IDs of existing shows for comparison

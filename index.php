@@ -35,13 +35,17 @@ $hasAllSettings = (!empty($settings['sonarr_url']) && !empty($settings['sonarr_a
                   !empty($settings['radarr_url']) && !empty($settings['radarr_api_key']) &&
                   !empty($settings['sabnzbd_url']) && !empty($settings['sabnzbd_api_key'])) || $demoMode;
 
-// If we have settings or demo mode is enabled, fetch data from the APIs
-if ($hasAllSettings) {
+// Always fetch data if demo mode is enabled or if we have settings
+// First, check if we have actual API settings or if demo mode is enabled
+if ($demoMode || $hasAllSettings) {
     // Get Sonarr data
     if (!empty($settings['sonarr_url']) && !empty($settings['sonarr_api_key'])) {
         $sonarrData = getSonarrOverview($settings['sonarr_url'], $settings['sonarr_api_key'], $demoMode);
     } elseif ($demoMode) {
+        // In demo mode, use sample data
         $sonarrData = getSampleTvShows();
+    } else {
+        $sonarrData = [];
     }
 
     // Get Radarr data
@@ -62,7 +66,7 @@ if ($hasAllSettings) {
         $sabnzbdData = getSabnzbdQueue($settings['sabnzbd_url'], $settings['sabnzbd_api_key'], $demoMode);
         
         // Get download history
-        $downloadHistory = getSabnzbdHistory($settings['sabnzbd_url'], $settings['sabnzbd_api_key'], 12, $demoMode);
+        $downloadHistory = getSabnzbdHistory($settings['sabnzbd_url'], $settings['sabnzbd_api_key'], 1, 12, $demoMode);
         $historySlots = isset($downloadHistory['slots']) ? $downloadHistory['slots'] : [];
         
         // Process the recent downloads to match with shows/movies
@@ -87,7 +91,43 @@ if ($hasAllSettings) {
             true // force demo mode
         );
     } else {
+        $sabnzbdData = [];
         $recentDownloads = [];
+    }
+    
+    // In demo mode, make sure we have all necessary data
+    if ($demoMode) {
+        // Ensure we have Sonarr data
+        if (empty($sonarrData)) {
+            $sonarrData = getSampleTvShows();
+        }
+        
+        // Ensure we have Radarr data
+        if (empty($radarrData)) {
+            $radarrData = getSampleMovies();
+        }
+        
+        // Ensure we have upcoming movies
+        if (empty($upcomingMovies)) {
+            $upcomingMovies = getSampleUpcomingMovies();
+        }
+        
+        // Ensure we have SABnzbd data
+        if (empty($sabnzbdData)) {
+            $sabnzbdData = getSampleSabnzbdQueue();
+        }
+        
+        // Ensure we have recent downloads
+        if (empty($recentDownloads)) {
+            $demoHistory = getSampleSabnzbdHistory(12);
+            $historySlots = isset($demoHistory['slots']) ? $demoHistory['slots'] : [];
+            $recentDownloads = processRecentDownloads(
+                $historySlots,
+                $sonarrData,
+                $radarrData,
+                true // force demo mode
+            );
+        }
     }
 }
 
@@ -96,10 +136,10 @@ require_once 'includes/header.php';
 ?>
 
 <div class="dashboard-container">
-    <?php if (!$hasAllSettings): ?>
+    <?php if (!$demoMode && !$hasAllSettings): ?>
         <div class="alert alert-warning">
             <h4><i class="fa fa-exclamation-triangle"></i> Configuration Required</h4>
-            <p>Please configure your API settings to connect to Sonarr, Radarr, and SABnzbd.</p>
+            <p>Please configure your API settings to connect to Sonarr, Radarr, and SABnzbd, or enable Demo Mode in settings.</p>
             <a href="settings.php" class="btn btn-primary">Go to Settings</a>
         </div>
     <?php else: ?>
