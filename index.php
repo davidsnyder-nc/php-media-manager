@@ -67,9 +67,11 @@ require_once 'includes/header.php';
         <section class="card">
             <div class="card-header">
                 <h2><i class="fa fa-download"></i> SABnzbd Queue</h2>
-                <div>
-                    <a href="sabnzbd.php?view=history" class="btn btn-sm btn-secondary me-2">View History</a>
-                    <a href="sabnzbd.php" class="btn btn-sm btn-primary">View Queue</a>
+                <div class="btn-toolbar">
+                    <div class="btn-group">
+                        <a href="sabnzbd.php?view=history" class="btn btn-sm btn-secondary">View History</a>
+                        <a href="sabnzbd.php" class="btn btn-sm btn-primary">View Queue</a>
+                    </div>
                 </div>
             </div>
             <div class="card-body">

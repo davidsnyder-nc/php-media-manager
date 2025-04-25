@@ -284,6 +284,7 @@ body {
 /* Episode List */
 .episode-list {
   margin-top: 15px;
+  width: 100%;
 }
 
 .episode-item {

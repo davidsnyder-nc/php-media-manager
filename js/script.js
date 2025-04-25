@@ -14,6 +14,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize lazy loading for images
     setupLazyLoading();
     
+    // Auto-update SABnzbd queue
+    setupAutoUpdateSabnzbdQueue();
+    
     // Handle SABnzbd action buttons
     const sabnzbdButtons = document.querySelectorAll('[data-action]');
     sabnzbdButtons.forEach(button => {
@@ -331,4 +334,153 @@ function cacheCommonImages() {
             img.src = url;
         });
     }
+}
+
+/**
+ * Set up auto-updating for SABnzbd queue data
+ * This will refresh the SABnzbd queue section every 10 seconds without reloading the entire page
+ */
+function setupAutoUpdateSabnzbdQueue() {
+    // Check if we're on a page with a SABnzbd queue section
+    const sabnzbdSection = document.querySelector('.card-header h2 i.fa-download');
+    if (!sabnzbdSection) return;
+    
+    // Set up an interval to update the queue data
+    const updateInterval = 10000; // Update every 10 seconds
+    
+    // Create a function to update the queue data
+    function updateSabnzbdQueue() {
+        fetch('api.php?action=get_sabnzbd_queue')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.queue) {
+                    // Update queue stats
+                    const queueStats = document.querySelector('.queue-stats');
+                    if (queueStats) {
+                        const statBoxes = queueStats.querySelectorAll('.stat-box');
+                        if (statBoxes.length >= 3) {
+                            // Update queue size
+                            const queueSizeBox = statBoxes[0];
+                            const queueSizeValue = queueSizeBox.querySelector('.stat-value');
+                            if (queueSizeValue) {
+                                queueSizeValue.textContent = formatSizeMB(data.queue.mb);
+                            }
+                            
+                            // Update download speed
+                            const speedBox = statBoxes[1];
+                            const speedValue = speedBox.querySelector('.stat-value');
+                            if (speedValue) {
+                                speedValue.textContent = formatSpeed(data.queue.kbpersec);
+                            }
+                            
+                            // Update time left
+                            const timeLeftBox = statBoxes[2];
+                            const timeLeftValue = timeLeftBox.querySelector('.stat-value');
+                            if (timeLeftValue) {
+                                timeLeftValue.textContent = data.queue.timeleft || 'N/A';
+                            }
+                        }
+                    }
+                    
+                    // Update queue items if they exist
+                    const queueItems = document.querySelector('.queue-items');
+                    if (queueItems && data.queue.slots && data.queue.slots.length > 0) {
+                        // Get or create header
+                        let queueHeader = document.querySelector('.card-body h4');
+                        if (!queueHeader && data.queue.slots.length > 0) {
+                            queueHeader = document.createElement('h4');
+                            queueHeader.textContent = 'Current Downloads';
+                            const cardBody = document.querySelector('.card-body');
+                            if (cardBody && cardBody.contains(queueStats)) {
+                                cardBody.insertBefore(queueHeader, queueItems);
+                            }
+                        } else if (queueHeader && data.queue.slots.length === 0) {
+                            queueHeader.remove();
+                        }
+                        
+                        // Clear existing items
+                        queueItems.innerHTML = '';
+                        
+                        // Add new items (up to 3)
+                        const itemsToShow = Math.min(data.queue.slots.length, 3);
+                        for (let i = 0; i < itemsToShow; i++) {
+                            const slot = data.queue.slots[i];
+                            const queueItemElement = document.createElement('div');
+                            queueItemElement.className = 'queue-item';
+                            
+                            queueItemElement.innerHTML = `
+                                <div class="item-name">${escapeHtml(slot.filename)}</div>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" style="width: ${slot.percentage}%" 
+                                         aria-valuenow="${slot.percentage}" aria-valuemin="0" aria-valuemax="100">
+                                        ${slot.percentage}%
+                                    </div>
+                                </div>
+                            `;
+                            
+                            queueItems.appendChild(queueItemElement);
+                        }
+                        
+                        // Add "View all" link if needed
+                        if (data.queue.slots.length > 3) {
+                            const moreLink = document.createElement('div');
+                            moreLink.className = 'more-link';
+                            moreLink.innerHTML = `<a href="sabnzbd.php">View all ${data.queue.slots.length} downloads</a>`;
+                            queueItems.appendChild(moreLink);
+                        }
+                    } else if (queueItems && (!data.queue.slots || data.queue.slots.length === 0)) {
+                        // No queue items, remove any existing queue content
+                        const queueHeader = document.querySelector('.card-body h4');
+                        if (queueHeader) {
+                            queueHeader.remove();
+                        }
+                        queueItems.innerHTML = '';
+                    }
+                    
+                    // If no queue data at all, show "No active downloads" message
+                    if (!data.queue || !data.queue.slots || data.queue.slots.length === 0) {
+                        const cardBody = document.querySelector('.card-body');
+                        const alertInfo = document.querySelector('.alert-info');
+                        
+                        if (!alertInfo && cardBody) {
+                            cardBody.innerHTML = '<div class="alert alert-info">No active downloads</div>';
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error updating SABnzbd queue:', error);
+            });
+    }
+    
+    // Helper function to format file size from MB
+    function formatSizeMB(mbSize) {
+        const mb = parseFloat(mbSize);
+        if (mb < 1000) {
+            return mb.toFixed(2) + ' MB';
+        } else {
+            return (mb / 1024).toFixed(2) + ' GB';
+        }
+    }
+    
+    // Helper function to format speed
+    function formatSpeed(kbps) {
+        const kbpsFloat = parseFloat(kbps);
+        if (kbpsFloat < 1000) {
+            return kbpsFloat.toFixed(1) + ' KB/s';
+        } else {
+            return (kbpsFloat / 1024).toFixed(2) + ' MB/s';
+        }
+    }
+    
+    // Helper function to escape HTML
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+    
+    // Call once immediately, then set interval
+    updateSabnzbdQueue();
+    setInterval(updateSabnzbdQueue, updateInterval);
 }
