@@ -14,10 +14,28 @@ $movieId = isset($_GET['id']) ? intval($_GET['id']) : 0;
 // Initialize movie data variable
 $movie = [];
 
-// Check if we have necessary settings and valid movie ID, or if demo mode is enabled
-if (($demoMode || (!empty($settings['radarr_url']) && !empty($settings['radarr_api_key']))) && $movieId > 0) {
-    // Get movie details
-    $movie = getRadarrMovieDetails($settings['radarr_url'], $settings['radarr_api_key'], $movieId, $demoMode);
+// In demo mode, get sample movies
+if ($demoMode) {
+    // Get sample movies
+    $sampleMovies = getSampleMovies();
+    
+    // Find the requested movie by ID
+    foreach ($sampleMovies as $sampleMovie) {
+        if (isset($sampleMovie['id']) && intval($sampleMovie['id']) === $movieId) {
+            $movie = $sampleMovie;
+            break;
+        }
+    }
+    
+    // If movie not found but we have sample movies, use the first one
+    if (empty($movie) && !empty($sampleMovies)) {
+        $movie = $sampleMovies[0];
+    }
+}
+// Otherwise try to get real movie data if we have API settings
+else if (!empty($settings['radarr_url']) && !empty($settings['radarr_api_key']) && $movieId > 0) {
+    // Get movie details from API
+    $movie = getRadarrMovieDetails($settings['radarr_url'], $settings['radarr_api_key'], $movieId, false);
 }
 
 $pageTitle = !empty($movie) ? htmlspecialchars($movie['title']) : "Movie Not Found";

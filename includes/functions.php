@@ -431,11 +431,18 @@ function getRadarrMovieDetails($url, $apiKey, $id, $demoMode = false) {
  * @return array Array of upcoming movies
  */
 function getUpcomingMovies($url, $apiKey, $demoMode = false) {
-    $movies = getRadarrMovies($url, $apiKey, $demoMode);
-    if ((!$movies || !is_array($movies)) && $demoMode) {
-        // Use demo data if API request failed and demo mode is enabled
+    // If in demo mode, return sample data directly
+    if ($demoMode) {
         return getSampleUpcomingMovies();
-    } elseif (!$movies || !is_array($movies)) {
+    }
+    
+    // Only try real API if we have credentials
+    if (!empty($url) && !empty($apiKey)) {
+        $movies = getRadarrMovies($url, $apiKey, false);
+        if (!$movies || !is_array($movies)) {
+            return [];
+        }
+    } else {
         return [];
     }
     
@@ -1213,6 +1220,95 @@ function getSampleTvShows() {
  * 
  * @return array Array of sample upcoming episodes
  */
+/**
+ * Get sample episodes for a specific show ID
+ * 
+ * @param int $showId The show ID
+ * @return array Sample episodes
+ */
+function getSampleEpisodes($showId = 0) {
+    // If no show ID specified, use a default one
+    if ($showId <= 0) {
+        $showId = 1; // Default to first show
+    }
+    
+    // Get sample TV shows to match details
+    $shows = getSampleTvShows();
+    
+    // Find the show by ID
+    $show = null;
+    foreach ($shows as $s) {
+        if (isset($s['id']) && $s['id'] == $showId) {
+            $show = $s;
+            break;
+        }
+    }
+    
+    // If show not found, use the first one
+    if (!$show && !empty($shows)) {
+        $show = $shows[0];
+        $showId = $show['id'];
+    }
+    
+    // Create 2-3 seasons with 8-12 episodes each
+    $episodes = [];
+    $seasons = [1, 2];
+    if ($showId % 3 == 0) {
+        $seasons[] = 3; // Some shows have 3 seasons
+    }
+    
+    // For each season
+    foreach ($seasons as $season) {
+        // Determine how many episodes in this season
+        $episodeCount = rand(8, 12);
+        
+        // For each episode
+        for ($episode = 1; $episode <= $episodeCount; $episode++) {
+            // Create a unique episode ID
+            $episodeId = ($showId * 1000) + ($season * 100) + $episode;
+            
+            // Create the episode data
+            $episodeData = [
+                'id' => $episodeId,
+                'seriesId' => $showId,
+                'seasonNumber' => $season,
+                'episodeNumber' => $episode,
+                'title' => "Episode " . $episode,
+                'airDate' => date('Y-m-d', strtotime("-" . (365 - ($season * 30) - $episode) . " days")),
+                'hasFile' => ($episode % 4 != 0), // Most episodes have files, some don't
+                'monitored' => true,
+                'absoluteEpisodeNumber' => (($season - 1) * $episodeCount) + $episode,
+                'overview' => "This is a sample episode description for season $season episode $episode.",
+                'episodeFile' => [
+                    'id' => $episodeId,
+                    'size' => rand(200, 800) * 1024 * 1024, // 200-800 MB
+                    'quality' => [
+                        'quality' => [
+                            'id' => 1,
+                            'name' => ($season == 1) ? "HDTV-720p" : "WEB-DL-1080p"
+                        ],
+                        'revision' => [
+                            'version' => 1
+                        ]
+                    ],
+                    'dateAdded' => date('Y-m-d', strtotime("-" . (300 - ($season * 30) - $episode) . " days")),
+                    'mediaInfo' => [
+                        'videoCodec' => 'x264',
+                        'audioCodec' => 'AAC',
+                        'audioChannels' => 2.0,
+                        'videoResolution' => ($season == 1) ? "720p" : "1080p"
+                    ]
+                ]
+            ];
+            
+            // Add the episode
+            $episodes[] = $episodeData;
+        }
+    }
+    
+    return $episodes;
+}
+
 function getSampleUpcomingEpisodes() {
     $today = new DateTime();
     $episodes = [];

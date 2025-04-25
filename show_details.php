@@ -16,14 +16,78 @@ $show = [];
 $seasons = [];
 $episodes = [];
 
-// Check if we have necessary settings and valid show ID, or if demo mode is enabled
-if (($demoMode || (!empty($settings['sonarr_url']) && !empty($settings['sonarr_api_key']))) && $showId > 0) {
-    // Get show details
-    $show = getSonarrShowDetails($settings['sonarr_url'], $settings['sonarr_api_key'], $showId, $demoMode);
+// In demo mode, use sample data
+if ($demoMode) {
+    // Get sample TV shows
+    $sampleShows = getSampleTvShows();
     
-    // Get show seasons and episodes
+    // Find the requested show by ID
+    foreach ($sampleShows as $sampleShow) {
+        if (isset($sampleShow['id']) && intval($sampleShow['id']) === $showId) {
+            $show = $sampleShow;
+            break;
+        }
+    }
+    
+    // If show not found but we have sample shows, use the first one
+    if (empty($show) && !empty($sampleShows)) {
+        $show = $sampleShows[0];
+        $showId = $show['id']; // Update showId to match
+    }
+    
+    // Get sample episodes for this show
     if (!empty($show)) {
-        $episodes = getSonarrEpisodes($settings['sonarr_url'], $settings['sonarr_api_key'], $showId, $demoMode);
+        $episodes = getSampleEpisodes(intval($show['id']));
+        
+        // Organize episodes by season
+        $seasons = [];
+        foreach ($episodes as $episode) {
+            $seasonNumber = $episode['seasonNumber'];
+            if (!isset($seasons[$seasonNumber])) {
+                $seasons[$seasonNumber] = [
+                    'seasonNumber' => $seasonNumber,
+                    'episodes' => [],
+                    'statistics' => [
+                        'totalEpisodeCount' => 0,
+                        'episodeFileCount' => 0,
+                        'episodeCount' => 0,
+                        'totalEpisodeCount' => 0,
+                        'sizeOnDisk' => 0,
+                        'percentOfEpisodes' => 0
+                    ]
+                ];
+            }
+            $seasons[$seasonNumber]['episodes'][] = $episode;
+            
+            // Update season statistics
+            $seasons[$seasonNumber]['statistics']['totalEpisodeCount']++;
+            if (isset($episode['hasFile']) && $episode['hasFile']) {
+                $seasons[$seasonNumber]['statistics']['episodeFileCount']++;
+                if (isset($episode['episodeFile']['size'])) {
+                    $seasons[$seasonNumber]['statistics']['sizeOnDisk'] += $episode['episodeFile']['size'];
+                }
+            }
+        }
+        
+        // Calculate percentage of downloaded episodes per season
+        foreach ($seasons as $seasonNumber => &$season) {
+            if ($season['statistics']['totalEpisodeCount'] > 0) {
+                $season['statistics']['percentOfEpisodes'] = ($season['statistics']['episodeFileCount'] / $season['statistics']['totalEpisodeCount']) * 100;
+            }
+        }
+        
+        // Sort seasons in descending order
+        krsort($seasons);
+    }
+}
+// Otherwise try to get real show data if we have API settings
+else if (!empty($settings['sonarr_url']) && !empty($settings['sonarr_api_key']) && $showId > 0) {
+    // Get show details from API
+    $show = getSonarrShowDetails($settings['sonarr_url'], $settings['sonarr_api_key'], $showId, false);
+    
+    // Get show seasons and episodes from API
+    if (!empty($show)) {
+        $episodes = getSonarrEpisodes($settings['sonarr_url'], $settings['sonarr_api_key'], $showId, false);
         
         // Organize episodes by season
         $seasons = [];
