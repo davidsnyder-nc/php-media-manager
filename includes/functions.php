@@ -117,11 +117,15 @@ function makeApiRequest($url, $endpoint, $params = [], $apiKey = '', $method = '
  * 
  * @param string $url Sonarr base URL
  * @param string $apiKey Sonarr API key
+ * @param bool $demoMode Whether to use demo data when API is unavailable
  * @return array Array of TV shows
  */
-function getSonarrOverview($url, $apiKey) {
+function getSonarrOverview($url, $apiKey, $demoMode = false) {
     $shows = makeApiRequest($url, 'api/v3/series', [], $apiKey);
-    if (!$shows || !is_array($shows)) {
+    if ((!$shows || !is_array($shows)) && $demoMode) {
+        // Use demo data if API request failed and demo mode is enabled
+        $shows = getSampleTvShows();
+    } elseif (!$shows || !is_array($shows)) {
         return [];
     }
     
@@ -138,10 +142,16 @@ function getSonarrOverview($url, $apiKey) {
  * 
  * @param string $url Sonarr base URL
  * @param string $apiKey Sonarr API key
+ * @param bool $demoMode Whether to use demo data when API is unavailable
  * @return array Array of TV shows
  */
-function getSonarrShows($url, $apiKey) {
-    return makeApiRequest($url, 'api/v3/series', [], $apiKey);
+function getSonarrShows($url, $apiKey, $demoMode = false) {
+    $shows = makeApiRequest($url, 'api/v3/series', [], $apiKey);
+    if ((!$shows || !is_array($shows)) && $demoMode) {
+        // Use demo data if API request failed and demo mode is enabled
+        return getSampleTvShows();
+    }
+    return $shows;
 }
 
 /**
@@ -184,9 +194,10 @@ function getSonarrEpisodes($url, $apiKey, $seriesId) {
  * 
  * @param string $url Sonarr base URL
  * @param string $apiKey Sonarr API key
+ * @param bool $demoMode Whether to use demo data when API is unavailable
  * @return array Array of upcoming episodes
  */
-function getUpcomingEpisodes($url, $apiKey) {
+function getUpcomingEpisodes($url, $apiKey, $demoMode = false) {
     $episodes = makeApiRequest($url, 'api/v3/calendar', [
         'start' => date('Y-m-d'),
         'end' => date('Y-m-d', strtotime('+7 days')),
@@ -195,7 +206,10 @@ function getUpcomingEpisodes($url, $apiKey) {
         'includeSeriesImages' => 'false'
     ], $apiKey);
     
-    if (!$episodes || !is_array($episodes)) {
+    if ((!$episodes || !is_array($episodes)) && $demoMode) {
+        // Use demo data if API request failed and demo mode is enabled
+        return getSampleUpcomingEpisodes();
+    } elseif (!$episodes || !is_array($episodes)) {
         return [];
     }
     
@@ -270,11 +284,15 @@ function getUpcomingEpisodes($url, $apiKey) {
  * 
  * @param string $url Radarr base URL
  * @param string $apiKey Radarr API key
+ * @param bool $demoMode Whether to use demo data when API is unavailable
  * @return array Array of movies
  */
-function getRadarrOverview($url, $apiKey) {
+function getRadarrOverview($url, $apiKey, $demoMode = false) {
     $movies = makeApiRequest($url, 'api/v3/movie', [], $apiKey);
-    if (!$movies || !is_array($movies)) {
+    if ((!$movies || !is_array($movies)) && $demoMode) {
+        // Use demo data if API request failed and demo mode is enabled
+        $movies = getSampleMovies();
+    } elseif (!$movies || !is_array($movies)) {
         return [];
     }
     
@@ -291,10 +309,16 @@ function getRadarrOverview($url, $apiKey) {
  * 
  * @param string $url Radarr base URL
  * @param string $apiKey Radarr API key
+ * @param bool $demoMode Whether to use demo data when API is unavailable
  * @return array Array of movies
  */
-function getRadarrMovies($url, $apiKey) {
-    return makeApiRequest($url, 'api/v3/movie', [], $apiKey);
+function getRadarrMovies($url, $apiKey, $demoMode = false) {
+    $movies = makeApiRequest($url, 'api/v3/movie', [], $apiKey);
+    if ((!$movies || !is_array($movies)) && $demoMode) {
+        // Use demo data if API request failed and demo mode is enabled
+        return getSampleMovies();
+    }
+    return $movies;
 }
 
 /**
@@ -856,4 +880,564 @@ function getImageProxyUrl($item, $type = 'poster') {
     return 'api.php?action=proxy_image&cache=' . (!empty($imageKey) ? '1' : '0') . 
            '&key=' . (!empty($imageKey) ? $imageKey : '') . 
            '&url=' . base64_encode($imageUrl);
+}
+
+/**
+ * Generate sample TV shows data for demo mode
+ * 
+ * @return array Array of sample TV shows
+ */
+function getSampleTvShows() {
+    $shows = [
+        [
+            'id' => 1,
+            'title' => 'Stranger Things',
+            'sortTitle' => 'Stranger Things',
+            'status' => 'continuing',
+            'overview' => 'When a young boy vanishes, a small town uncovers a mystery involving secret experiments, terrifying supernatural forces, and one strange little girl.',
+            'network' => 'Netflix',
+            'airTime' => '00:00',
+            'seasons' => [
+                ['seasonNumber' => 1, 'statistics' => ['episodeFileCount' => 8, 'totalEpisodeCount' => 8]],
+                ['seasonNumber' => 2, 'statistics' => ['episodeFileCount' => 9, 'totalEpisodeCount' => 9]],
+                ['seasonNumber' => 3, 'statistics' => ['episodeFileCount' => 8, 'totalEpisodeCount' => 8]],
+                ['seasonNumber' => 4, 'statistics' => ['episodeFileCount' => 9, 'totalEpisodeCount' => 9]]
+            ],
+            'year' => 2016,
+            'path' => '/tv/Stranger Things',
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/49WJfeN0moxb9IPfGn8AIqMGskD.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/56v2KjBlU4XaOv9rVYEQypROD7P.jpg']
+            ],
+            'added' => '2023-01-15T12:00:00Z'
+        ],
+        [
+            'id' => 2,
+            'title' => 'The Mandalorian',
+            'sortTitle' => 'Mandalorian',
+            'status' => 'continuing',
+            'overview' => 'After the fall of the Galactic Empire, lawlessness has spread throughout the galaxy. A lone gunfighter makes his way through the outer reaches, earning his keep as a bounty hunter.',
+            'network' => 'Disney+',
+            'airTime' => '00:00',
+            'seasons' => [
+                ['seasonNumber' => 1, 'statistics' => ['episodeFileCount' => 8, 'totalEpisodeCount' => 8]],
+                ['seasonNumber' => 2, 'statistics' => ['episodeFileCount' => 8, 'totalEpisodeCount' => 8]],
+                ['seasonNumber' => 3, 'statistics' => ['episodeFileCount' => 8, 'totalEpisodeCount' => 8]]
+            ],
+            'year' => 2019,
+            'path' => '/tv/The Mandalorian',
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/sWgBv7LV2PRoQgkxwlibdGXKz1S.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/o7qi2v5RnGFuJE8OeYMSKVgLOgP.jpg']
+            ],
+            'added' => '2023-02-20T15:30:00Z'
+        ],
+        [
+            'id' => 3,
+            'title' => 'Breaking Bad',
+            'sortTitle' => 'Breaking Bad',
+            'status' => 'ended',
+            'overview' => 'A high school chemistry teacher diagnosed with inoperable lung cancer turns to manufacturing and selling methamphetamine in order to secure his family\'s future.',
+            'network' => 'AMC',
+            'airTime' => '22:00',
+            'seasons' => [
+                ['seasonNumber' => 1, 'statistics' => ['episodeFileCount' => 7, 'totalEpisodeCount' => 7]],
+                ['seasonNumber' => 2, 'statistics' => ['episodeFileCount' => 13, 'totalEpisodeCount' => 13]],
+                ['seasonNumber' => 3, 'statistics' => ['episodeFileCount' => 13, 'totalEpisodeCount' => 13]],
+                ['seasonNumber' => 4, 'statistics' => ['episodeFileCount' => 13, 'totalEpisodeCount' => 13]],
+                ['seasonNumber' => 5, 'statistics' => ['episodeFileCount' => 16, 'totalEpisodeCount' => 16]]
+            ],
+            'year' => 2008,
+            'path' => '/tv/Breaking Bad',
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/tsRy63Mu5cu8etL1X7ZLyf7UP1M.jpg']
+            ],
+            'added' => '2022-10-05T08:45:00Z'
+        ],
+        [
+            'id' => 4,
+            'title' => 'The Office',
+            'sortTitle' => 'Office',
+            'status' => 'ended',
+            'overview' => 'A mockumentary on a group of typical office workers, where the workday consists of ego clashes, inappropriate behavior, and tedium.',
+            'network' => 'NBC',
+            'airTime' => '21:00',
+            'seasons' => [
+                ['seasonNumber' => 1, 'statistics' => ['episodeFileCount' => 6, 'totalEpisodeCount' => 6]],
+                ['seasonNumber' => 2, 'statistics' => ['episodeFileCount' => 22, 'totalEpisodeCount' => 22]],
+                ['seasonNumber' => 3, 'statistics' => ['episodeFileCount' => 25, 'totalEpisodeCount' => 25]],
+                ['seasonNumber' => 4, 'statistics' => ['episodeFileCount' => 19, 'totalEpisodeCount' => 19]],
+                ['seasonNumber' => 5, 'statistics' => ['episodeFileCount' => 28, 'totalEpisodeCount' => 28]],
+                ['seasonNumber' => 6, 'statistics' => ['episodeFileCount' => 26, 'totalEpisodeCount' => 26]],
+                ['seasonNumber' => 7, 'statistics' => ['episodeFileCount' => 26, 'totalEpisodeCount' => 26]],
+                ['seasonNumber' => 8, 'statistics' => ['episodeFileCount' => 24, 'totalEpisodeCount' => 24]],
+                ['seasonNumber' => 9, 'statistics' => ['episodeFileCount' => 23, 'totalEpisodeCount' => 23]]
+            ],
+            'year' => 2005,
+            'path' => '/tv/The Office',
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/qWnJzyZhyy74gjpSjIXWmuk0ifX.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/vNpuAxGTl9HsUbHqam3E9CzqCvX.jpg']
+            ],
+            'added' => '2023-03-12T14:20:00Z'
+        ],
+        [
+            'id' => 5,
+            'title' => 'The Last of Us',
+            'sortTitle' => 'Last of Us',
+            'status' => 'continuing',
+            'overview' => 'Twenty years after modern civilization has been destroyed, Joel, a hardened survivor, is hired to smuggle Ellie, a 14-year-old girl, out of an oppressive quarantine zone. What starts as a small job soon becomes a brutal, heartbreaking journey.',
+            'network' => 'HBO',
+            'airTime' => '21:00',
+            'seasons' => [
+                ['seasonNumber' => 1, 'statistics' => ['episodeFileCount' => 9, 'totalEpisodeCount' => 9]]
+            ],
+            'year' => 2023,
+            'path' => '/tv/The Last of Us',
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/uDgy6hyPd82kOHh6I95FLtLnNIh.jpg']
+            ],
+            'added' => '2023-01-25T17:15:00Z'
+        ],
+        [
+            'id' => 6,
+            'title' => 'Game of Thrones',
+            'sortTitle' => 'Game of Thrones',
+            'status' => 'ended',
+            'overview' => 'Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war. All while a very ancient evil awakens in the farthest north.',
+            'network' => 'HBO',
+            'airTime' => '21:00',
+            'seasons' => [
+                ['seasonNumber' => 1, 'statistics' => ['episodeFileCount' => 10, 'totalEpisodeCount' => 10]],
+                ['seasonNumber' => 2, 'statistics' => ['episodeFileCount' => 10, 'totalEpisodeCount' => 10]],
+                ['seasonNumber' => 3, 'statistics' => ['episodeFileCount' => 10, 'totalEpisodeCount' => 10]],
+                ['seasonNumber' => 4, 'statistics' => ['episodeFileCount' => 10, 'totalEpisodeCount' => 10]],
+                ['seasonNumber' => 5, 'statistics' => ['episodeFileCount' => 10, 'totalEpisodeCount' => 10]],
+                ['seasonNumber' => 6, 'statistics' => ['episodeFileCount' => 10, 'totalEpisodeCount' => 10]],
+                ['seasonNumber' => 7, 'statistics' => ['episodeFileCount' => 7, 'totalEpisodeCount' => 7]],
+                ['seasonNumber' => 8, 'statistics' => ['episodeFileCount' => 6, 'totalEpisodeCount' => 6]]
+            ],
+            'year' => 2011,
+            'path' => '/tv/Game of Thrones',
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/u3bZgnGQ9T01sWNhyveQz0wH0Hl.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/suopoADq0k8YZr4dQXcU6pToj6s.jpg']
+            ],
+            'added' => '2022-05-18T09:10:00Z'
+        ]
+    ];
+    
+    return $shows;
+}
+
+/**
+ * Generate sample upcoming episodes for demo mode
+ * 
+ * @return array Array of sample upcoming episodes
+ */
+function getSampleUpcomingEpisodes() {
+    $today = new DateTime();
+    $episodes = [];
+    
+    // Add sample episodes for the next 7 days
+    for ($i = 0; $i < 10; $i++) {
+        $date = clone $today;
+        $date->modify('+' . rand(0, 7) . ' days');
+        
+        // Randomly pick a show
+        $showId = rand(1, 6);
+        $showTitle = '';
+        
+        switch ($showId) {
+            case 1: $showTitle = 'Stranger Things'; break;
+            case 2: $showTitle = 'The Mandalorian'; break;
+            case 3: $showTitle = 'Breaking Bad'; break;
+            case 4: $showTitle = 'The Office'; break;
+            case 5: $showTitle = 'The Last of Us'; break;
+            case 6: $showTitle = 'Game of Thrones'; break;
+        }
+        
+        // Create episode info
+        $season = rand(1, 4);
+        $episode = rand(1, 10);
+        
+        $episodes[] = [
+            'id' => 1000 + $i,
+            'seriesId' => $showId,
+            'episodeNumber' => $episode,
+            'seasonNumber' => $season,
+            'title' => 'Episode ' . $episode,
+            'airDate' => $date->format('Y-m-d'),
+            'airDateUtc' => $date->format('Y-m-d\TH:i:s\Z'),
+            'series' => [
+                'id' => $showId,
+                'title' => $showTitle,
+                'status' => ($showId % 2 == 0) ? 'continuing' : 'ended'
+            ],
+            'seriesTitle' => $showTitle
+        ];
+    }
+    
+    // Sort by air date
+    usort($episodes, function($a, $b) {
+        return strtotime($a['airDate']) - strtotime($b['airDate']);
+    });
+    
+    return $episodes;
+}
+
+/**
+ * Generate sample movies data for demo mode
+ * 
+ * @return array Array of sample movies
+ */
+function getSampleMovies() {
+    $movies = [
+        [
+            'id' => 101,
+            'title' => 'The Shawshank Redemption',
+            'originalTitle' => 'The Shawshank Redemption',
+            'year' => 1994,
+            'overview' => 'Framed in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison, where he puts his accounting skills to work for an amoral warden.',
+            'runtime' => 142,
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/kXfqcdQKsToO0OUXHcrrNCHDBzO.jpg']
+            ],
+            'genres' => ['Drama', 'Crime'],
+            'studio' => 'Columbia Pictures',
+            'path' => '/movies/The Shawshank Redemption (1994)',
+            'added' => '2023-01-10T08:30:00Z'
+        ],
+        [
+            'id' => 102,
+            'title' => 'The Dark Knight',
+            'originalTitle' => 'The Dark Knight',
+            'year' => 2008,
+            'overview' => 'Batman raises the stakes in his war on crime. With the help of Lt. Jim Gordon and District Attorney Harvey Dent, Batman sets out to dismantle the remaining criminal organizations that plague the streets.',
+            'runtime' => 152,
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/hkBaDkMWbLaf8B1lsWsKX7Ew3Xq.jpg']
+            ],
+            'genres' => ['Action', 'Crime', 'Drama', 'Thriller'],
+            'studio' => 'Warner Bros. Pictures',
+            'path' => '/movies/The Dark Knight (2008)',
+            'added' => '2023-02-15T12:45:00Z'
+        ],
+        [
+            'id' => 103,
+            'title' => 'Pulp Fiction',
+            'originalTitle' => 'Pulp Fiction',
+            'year' => 1994,
+            'overview' => 'A burger-loving hit man, his philosophical partner, a drug-addled gangster\'s moll and a washed-up boxer converge in this sprawling, comedic crime caper.',
+            'runtime' => 154,
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/suaEOtk1N1sgg2QM528GlJLNN9o.jpg']
+            ],
+            'genres' => ['Thriller', 'Crime'],
+            'studio' => 'Miramax Films',
+            'path' => '/movies/Pulp Fiction (1994)',
+            'added' => '2022-11-20T10:15:00Z'
+        ],
+        [
+            'id' => 104,
+            'title' => 'The Matrix',
+            'originalTitle' => 'The Matrix',
+            'year' => 1999,
+            'overview' => 'Set in the 22nd century, The Matrix tells the story of a computer hacker who joins a group of underground insurgents fighting the vast and powerful computers who now rule the earth.',
+            'runtime' => 136,
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/fNG7i7RqMErkcqhohV2a6cV1Ehy.jpg']
+            ],
+            'genres' => ['Action', 'Science Fiction'],
+            'studio' => 'Warner Bros. Pictures',
+            'path' => '/movies/The Matrix (1999)',
+            'added' => '2023-03-05T16:20:00Z'
+        ],
+        [
+            'id' => 105,
+            'title' => 'Inception',
+            'originalTitle' => 'Inception',
+            'year' => 2010,
+            'overview' => 'Cobb, a skilled thief who commits corporate espionage by infiltrating the subconscious of his targets is offered a chance to regain his old life as payment for a task considered to be impossible: "inception", the implantation of another person\'s idea into a target\'s subconscious.',
+            'runtime' => 148,
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/s3TBrRGB1iav7gFOCNx3H31MoES.jpg']
+            ],
+            'genres' => ['Action', 'Science Fiction', 'Adventure'],
+            'studio' => 'Warner Bros. Pictures',
+            'path' => '/movies/Inception (2010)',
+            'added' => '2022-12-28T14:10:00Z'
+        ],
+        [
+            'id' => 106,
+            'title' => 'Interstellar',
+            'originalTitle' => 'Interstellar',
+            'year' => 2014,
+            'overview' => 'The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.',
+            'runtime' => 169,
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/rAiYTfKGqDCRIIqo664sY9XZIvQ.jpg']
+            ],
+            'genres' => ['Adventure', 'Drama', 'Science Fiction'],
+            'studio' => 'Paramount Pictures',
+            'path' => '/movies/Interstellar (2014)',
+            'added' => '2023-01-05T11:30:00Z'
+        ],
+        [
+            'id' => 107,
+            'title' => 'Avengers: Endgame',
+            'originalTitle' => 'Avengers: Endgame',
+            'year' => 2019,
+            'overview' => 'After the devastating events of Avengers: Infinity War, the universe is in ruins due to the efforts of the Mad Titan, Thanos. With the help of remaining allies, the Avengers must assemble once more in order to undo Thanos\'s actions and restore order to the universe once and for all, no matter what consequences may be in store.',
+            'runtime' => 181,
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/or06FN3Dka5tukK1e9sl16pB3iy.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg']
+            ],
+            'genres' => ['Adventure', 'Science Fiction', 'Action'],
+            'studio' => 'Marvel Studios',
+            'path' => '/movies/Avengers Endgame (2019)',
+            'added' => '2023-02-28T09:15:00Z'
+        ],
+        [
+            'id' => 108,
+            'title' => 'The Godfather',
+            'originalTitle' => 'The Godfather',
+            'year' => 1972,
+            'overview' => 'Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family. When organized crime family patriarch, Vito Corleone barely survives an attempt on his life, his youngest son, Michael steps in to take care of the would-be killers, launching a campaign of bloody revenge.',
+            'runtime' => 175,
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/rSPw7tgCH9c6NqICZef4kZjFOQ5.jpg']
+            ],
+            'genres' => ['Drama', 'Crime'],
+            'studio' => 'Paramount Pictures',
+            'path' => '/movies/The Godfather (1972)',
+            'added' => '2022-10-14T07:45:00Z'
+        ]
+    ];
+    
+    return $movies;
+}
+
+/**
+ * Generate sample upcoming movies for demo mode
+ * 
+ * @return array Array of sample upcoming movies
+ */
+function getSampleUpcomingMovies() {
+    $upcoming = [
+        [
+            'id' => 201,
+            'title' => 'Dune: Part Two',
+            'originalTitle' => 'Dune: Part Two',
+            'year' => 2024,
+            'inCinemas' => '2024-03-01T00:00:00Z',
+            'physicalRelease' => '2024-05-30T00:00:00Z',
+            'overview' => 'Follow the mythic journey of Paul Atreides as he unites with Chani and the Fremen while on a warpath of revenge against the conspirators who destroyed his family.',
+            'runtime' => 166,
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/4fLZUr1e65hKPPM39AZWZiRKElo.jpg']
+            ],
+            'genres' => ['Adventure', 'Science Fiction']
+        ],
+        [
+            'id' => 202,
+            'title' => 'Deadpool & Wolverine',
+            'originalTitle' => 'Deadpool & Wolverine',
+            'year' => 2024,
+            'inCinemas' => '2024-07-26T00:00:00Z',
+            'physicalRelease' => '2024-10-15T00:00:00Z',
+            'overview' => 'Wolverine joins the "merc with a mouth" for an adventure across the multiverse.',
+            'runtime' => 120,
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/8hJqXjHGFnNJvBoJ2VgxAVdXPmX.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/697j9EYwFw4XJ6NyQUPQN9q8piX.jpg']
+            ],
+            'genres' => ['Action', 'Comedy', 'Science Fiction']
+        ],
+        [
+            'id' => 203,
+            'title' => 'Kingdom of the Planet of the Apes',
+            'originalTitle' => 'Kingdom of the Planet of the Apes',
+            'year' => 2024,
+            'inCinemas' => '2024-05-10T00:00:00Z',
+            'physicalRelease' => '2024-08-20T00:00:00Z',
+            'overview' => 'Several generations in the future following Caesar\'s reign, apes are now the dominant species and humans have been reduced to living in the shadows.',
+            'runtime' => 145,
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/zvOfoRZH8fgRiQHb6OkwQO9Uie5.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/mDeUmPe4MF35xk6wKWG8K3OPwh7.jpg']
+            ],
+            'genres' => ['Science Fiction', 'Adventure', 'Action']
+        ],
+        [
+            'id' => 204,
+            'title' => 'Twisters',
+            'originalTitle' => 'Twisters',
+            'year' => 2024,
+            'inCinemas' => '2024-07-19T00:00:00Z',
+            'physicalRelease' => '2024-10-01T00:00:00Z',
+            'overview' => 'A sequel to the 1996 film Twister, focusing on a new generation of storm chasers.',
+            'runtime' => 130,
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/yRm3F2G8NzK5Y6gQIWP8cT2V3rw.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/4i1t5YJQu5mEg231YWrOoBdxo4y.jpg']
+            ],
+            'genres' => ['Action', 'Adventure', 'Drama']
+        ],
+        [
+            'id' => 205,
+            'title' => 'Furiosa: A Mad Max Saga',
+            'originalTitle' => 'Furiosa: A Mad Max Saga',
+            'year' => 2024,
+            'inCinemas' => '2024-05-24T00:00:00Z',
+            'physicalRelease' => '2024-08-27T00:00:00Z',
+            'overview' => 'As the world fell, young Furiosa is snatched from the Green Place of Many Mothers and falls into the hands of a great Biker Horde led by the Warlord Dementus. Sweeping through the Wasteland, they come across the Citadel presided over by The Immortan Joe.',
+            'runtime' => 150,
+            'images' => [
+                ['coverType' => 'poster', 'remoteUrl' => 'https://image.tmdb.org/t/p/w500/kdYg1wEURdKa5K9NSRGnCmWMKNu.jpg'],
+                ['coverType' => 'fanart', 'remoteUrl' => 'https://image.tmdb.org/t/p/original/rz8s4SJcnYIFBnDR69y725a0QJG.jpg']
+            ],
+            'genres' => ['Action', 'Adventure', 'Science Fiction']
+        ]
+    ];
+    
+    return $upcoming;
+}
+
+/**
+ * Generate sample SABnzbd queue data for demo mode
+ * 
+ * @return array Sample queue data
+ */
+function getSampleSabnzbdQueue() {
+    $slotCount = rand(2, 5);
+    $slots = [];
+    
+    $totalMb = 0;
+    for ($i = 0; $i < $slotCount; $i++) {
+        $mb = rand(500, 5000);
+        $totalMb += $mb;
+        $mbleft = $mb * (1 - (rand(10, 90) / 100));
+        $percentage = round(100 - (($mbleft / $mb) * 100));
+        
+        $timeRemaining = gmdate("H:i:s", rand(300, 7200));
+        
+        switch ($i) {
+            case 0:
+                $filename = 'The.Last.of.Us.S02E02.1080p.WEB.H264-EXPLOIT';
+                break;
+            case 1:
+                $filename = 'Interstellar.2014.UHD.BluRay.2160p.HEVC.TrueHD.7.1.Atmos-HDBEE';
+                break;
+            case 2:
+                $filename = 'Dune.Part.Two.2024.1080p.WEBRip.x264-RARBG';
+                break;
+            case 3:
+                $filename = 'Breaking.Bad.Complete.Series.1080p.BluRay.x264';
+                break;
+            case 4:
+                $filename = 'Stranger.Things.S04.COMPLETE.1080p.NF.WEBRip.x264-GalaxyTV';
+                break;
+            default:
+                $filename = 'Random.Download.' . rand(1000, 9999);
+        }
+        
+        $slots[] = [
+            'id' => 'nzb_' . rand(1000000, 9999999),
+            'filename' => $filename,
+            'index' => $i,
+            'eta' => $timeRemaining,
+            'status' => 'Downloading',
+            'mb' => $mb,
+            'mbleft' => $mbleft,
+            'percentage' => $percentage,
+            'timeleft' => $timeRemaining,
+            'category' => ($i % 2 == 0) ? 'tv' : 'movies',
+        ];
+    }
+    
+    return [
+        'slots' => $slots,
+        'paused' => false,
+        'timeleft' => gmdate("H:i:s", rand(1800, 14400)),
+        'mb' => $totalMb,
+        'mbleft' => $totalMb * 0.4,
+        'kbpersec' => rand(2000, 20000),
+        'speedlimit' => '0',
+        'status' => 'Downloading',
+    ];
+}
+
+/**
+ * Generate sample SABnzbd history data for demo mode
+ * 
+ * @param int $limit Number of history items to generate
+ * @return array Sample history data
+ */
+function getSampleSabnzbdHistory($limit = 10) {
+    $slots = [];
+    $now = new DateTime();
+    
+    for ($i = 0; $i < $limit; $i++) {
+        $completed = clone $now;
+        $completed->modify('-' . rand(1, 14) . ' days');
+        $completed->modify('-' . rand(0, 23) . ' hours');
+        $completed->modify('-' . rand(0, 59) . ' minutes');
+        
+        $sizeGb = rand(1, 30);
+        
+        // Determine type and name
+        $type = ($i % 3 == 0) ? 'movie' : 'tv';
+        $name = '';
+        $category = $type;
+        
+        if ($type === 'tv') {
+            $shows = ['Stranger Things', 'Breaking Bad', 'The Mandalorian', 'The Last of Us', 'Game of Thrones'];
+            $showName = $shows[array_rand($shows)];
+            $season = rand(1, 4);
+            $episode = rand(1, 12);
+            $name = str_replace(' ', '.', $showName) . '.S' . str_pad($season, 2, '0', STR_PAD_LEFT) . 'E' . str_pad($episode, 2, '0', STR_PAD_LEFT) . '.1080p.WEB.x264';
+        } else {
+            $movies = ['The Shawshank Redemption', 'The Dark Knight', 'Inception', 'Interstellar', 'Pulp Fiction', 'The Matrix'];
+            $movieName = $movies[array_rand($movies)];
+            $year = rand(1990, 2023);
+            $name = str_replace(' ', '.', $movieName) . '.' . $year . '.1080p.BluRay.x264';
+        }
+        
+        $slots[] = [
+            'id' => 'history_' . rand(1000000, 9999999),
+            'name' => $name,
+            'status' => 'Completed',
+            'bytes' => $sizeGb * 1024 * 1024 * 1024,
+            'size' => $sizeGb . ' GB',
+            'category' => $category,
+            'completed' => $completed->format('Y-m-d\TH:i:s\Z'),
+            'nzo_id' => 'nzo_' . rand(10000000, 99999999),
+            'download_time' => rand(1800, 14400),
+            'type' => $type,
+            'size_float' => $sizeGb
+        ];
+    }
+    
+    // Sort by completed time (newest first)
+    usort($slots, function($a, $b) {
+        return strtotime($b['completed']) - strtotime($a['completed']);
+    });
+    
+    return [
+        'slots' => $slots,
+        'noofslots' => count($slots),
+        'noofslots_total' => $limit,
+    ];
 }
