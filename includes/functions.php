@@ -417,6 +417,49 @@ function getSabnzbdHistory($url, $apiKey, $page = 1, $limit = 10) {
 }
 
 /**
+ * Get recently completed downloads from SABnzbd
+ * 
+ * @param string $url SABnzbd base URL
+ * @param string $apiKey SABnzbd API key
+ * @param int $limit Number of items to return
+ * @return array Recently completed downloads
+ */
+function getRecentlyDownloadedContent($url, $apiKey, $limit = 6) {
+    $response = makeApiRequest($url, 'api', [
+        'mode' => 'history',
+        'output' => 'json',
+        'limit' => $limit
+    ], $apiKey);
+    
+    if (isset($response['history']) && isset($response['history']['slots'])) {
+        // Only return completed downloads
+        $downloads = array_filter($response['history']['slots'], function($item) {
+            return $item['status'] === 'Completed';
+        });
+        
+        // Categorize downloads as TV shows or movies
+        foreach ($downloads as &$download) {
+            if (isset($download['category'])) {
+                $category = strtolower($download['category']);
+                if (strpos($category, 'tv') !== false || strpos($category, 'show') !== false || strpos($category, 'series') !== false) {
+                    $download['type'] = 'tv';
+                } elseif (strpos($category, 'movie') !== false || strpos($category, 'film') !== false) {
+                    $download['type'] = 'movie';
+                } else {
+                    $download['type'] = 'other';
+                }
+            } else {
+                $download['type'] = 'other';
+            }
+        }
+        
+        return $downloads;
+    }
+    
+    return [];
+}
+
+/**
  * Get status data from SABnzbd
  * 
  * @param string $url SABnzbd base URL

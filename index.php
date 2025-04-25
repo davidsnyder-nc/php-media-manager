@@ -48,6 +48,7 @@ if ($hasAllSettings) {
     // Get SABnzbd data
     if (!empty($settings['sabnzbd_url']) && !empty($settings['sabnzbd_api_key'])) {
         $sabnzbdData = getSabnzbdQueue($settings['sabnzbd_url'], $settings['sabnzbd_api_key']);
+        $recentDownloads = getRecentlyDownloadedContent($settings['sabnzbd_url'], $settings['sabnzbd_api_key'], 12);
     }
 }
 
@@ -134,7 +135,7 @@ require_once 'includes/header.php';
                             <button class="nav-link active" id="episodes-tab" data-bs-toggle="tab" data-bs-target="#episodes" type="button" role="tab" aria-controls="episodes" aria-selected="true">Upcoming Episodes</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="shows-tab" data-bs-toggle="tab" data-bs-target="#shows" type="button" role="tab" aria-controls="shows" aria-selected="false">Recently Added</button>
+                            <button class="nav-link" id="shows-tab" data-bs-toggle="tab" data-bs-target="#shows" type="button" role="tab" aria-controls="shows" aria-selected="false">Recently Downloaded</button>
                         </li>
                     </ul>
                     <div class="tab-content" id="showTabsContent">
@@ -167,25 +168,32 @@ require_once 'includes/header.php';
                         <div class="tab-pane fade" id="shows" role="tabpanel" aria-labelledby="shows-tab">
                             <div class="media-grid">
                                 <?php 
-                                $recentShows = array_slice($sonarrData, 0, 6);
-                                foreach ($recentShows as $show): 
+                                // Filter TV shows from recent downloads
+                                $recentTvShows = array_filter($recentDownloads ?? [], function($item) {
+                                    return $item['type'] === 'tv';
+                                });
+                                
+                                if (empty($recentTvShows)):
+                                ?>
+                                    <div class="alert alert-info">No recently downloaded TV shows found</div>
+                                <?php 
+                                else:
+                                    $recentTvShows = array_slice($recentTvShows, 0, 6);
+                                    foreach ($recentTvShows as $download): 
                                 ?>
                                     <div class="media-item">
-                                        <a href="show_details.php?id=<?php echo $show['id']; ?>">
-                                            <?php if (!empty($show['images'])): ?>
-                                                <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($show); ?>');"></div>
-                                            <?php else: ?>
-                                                <div class="media-poster no-image">
-                                                    <i class="fa fa-tv"></i>
-                                                </div>
-                                            <?php endif; ?>
-                                            <div class="media-title"><?php echo htmlspecialchars($show['title']); ?></div>
-                                            <?php if (isset($show['year'])): ?>
-                                                <div class="media-year"><?php echo $show['year']; ?></div>
-                                            <?php endif; ?>
-                                        </a>
+                                        <div class="download-item">
+                                            <div class="media-poster no-image">
+                                                <i class="fa fa-tv"></i>
+                                            </div>
+                                            <div class="media-title"><?php echo htmlspecialchars($download['name']); ?></div>
+                                            <div class="media-year"><?php echo date('M j, Y', strtotime($download['completed'])); ?></div>
+                                        </div>
                                     </div>
-                                <?php endforeach; ?>
+                                <?php 
+                                    endforeach;
+                                endif;
+                                ?>
                             </div>
                         </div>
                     </div>
@@ -205,7 +213,7 @@ require_once 'includes/header.php';
                 <?php else: ?>
                     <ul class="nav nav-tabs mb-3" id="movieTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="recent-tab" data-bs-toggle="tab" data-bs-target="#recent" type="button" role="tab" aria-controls="recent" aria-selected="true">Recent</button>
+                            <button class="nav-link active" id="recent-tab" data-bs-toggle="tab" data-bs-target="#recent" type="button" role="tab" aria-controls="recent" aria-selected="true">Recently Downloaded</button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab" aria-controls="upcoming" aria-selected="false">Upcoming</button>
@@ -215,25 +223,32 @@ require_once 'includes/header.php';
                         <div class="tab-pane fade show active" id="recent" role="tabpanel" aria-labelledby="recent-tab">
                             <div class="media-grid">
                                 <?php 
-                                $recentMovies = array_slice($radarrData, 0, 12);
-                                foreach ($recentMovies as $movie): 
+                                // Filter movies from recent downloads
+                                $recentMovieDownloads = array_filter($recentDownloads ?? [], function($item) {
+                                    return $item['type'] === 'movie';
+                                });
+                                
+                                if (empty($recentMovieDownloads)):
+                                ?>
+                                    <div class="alert alert-info">No recently downloaded movies found</div>
+                                <?php 
+                                else:
+                                    $recentMovieDownloads = array_slice($recentMovieDownloads, 0, 12);
+                                    foreach ($recentMovieDownloads as $download): 
                                 ?>
                                     <div class="media-item">
-                                        <a href="movie_details.php?id=<?php echo $movie['id']; ?>">
-                                            <?php if (!empty($movie['images'])): ?>
-                                                <div class="media-poster" style="background-image: url('<?php echo getImageProxyUrl($movie); ?>');"></div>
-                                            <?php else: ?>
-                                                <div class="media-poster no-image">
-                                                    <i class="fa fa-film"></i>
-                                                </div>
-                                            <?php endif; ?>
-                                            <div class="media-title"><?php echo htmlspecialchars($movie['title']); ?></div>
-                                            <?php if (isset($movie['year'])): ?>
-                                                <div class="media-year"><?php echo $movie['year']; ?></div>
-                                            <?php endif; ?>
-                                        </a>
+                                        <div class="download-item">
+                                            <div class="media-poster no-image">
+                                                <i class="fa fa-film"></i>
+                                            </div>
+                                            <div class="media-title"><?php echo htmlspecialchars($download['name']); ?></div>
+                                            <div class="media-year"><?php echo date('M j, Y', strtotime($download['completed'])); ?></div>
+                                        </div>
                                     </div>
-                                <?php endforeach; ?>
+                                <?php 
+                                    endforeach;
+                                endif;
+                                ?>
                             </div>
                         </div>
                         <div class="tab-pane fade" id="upcoming" role="tabpanel" aria-labelledby="upcoming-tab">

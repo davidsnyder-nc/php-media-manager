@@ -284,6 +284,8 @@ body {
 /* Episode List */
 .episode-list {
   margin-top: 15px;
+  display: flex;
+  flex-direction: column;
   width: 100%;
 }
 
@@ -764,4 +766,21 @@ footer {
 
 .animated-fade-in {
   animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Download item styling */
+.download-item {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  padding: 8px;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease;
+}
+
+.download-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
