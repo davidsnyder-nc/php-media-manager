@@ -2,7 +2,7 @@ modules = ["python-3.11", "php"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["openssl", "postgresql", "php"]
+packages = ["openssl", "php", "postgresql"]
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -36,6 +36,7 @@ externalPort = 80
 [[ports]]
 localPort = 8000
 externalPort = 8000
+exposeLocalhost = true
 
 [[ports]]
 localPort = 8080
