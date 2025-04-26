@@ -201,7 +201,7 @@ require_once 'includes/header.php';
 
         <!-- Sonarr Section -->
         <section class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="card-header">
                 <h2><i class="fa fa-tv"></i> TV Shows</h2>
                 <a href="sonarr.php" class="btn btn-sm btn-primary">View All Shows</a>
             </div>
@@ -209,22 +209,16 @@ require_once 'includes/header.php';
                 <?php if (empty($sonarrData)): ?>
                     <div class="alert alert-info">No TV shows found or unable to connect to Sonarr</div>
                 <?php else: ?>
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <ul class="nav nav-tabs" id="showTabs" role="tablist">
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link active" id="episodes-tab" data-bs-toggle="tab" data-bs-target="#episodes" type="button" role="tab" aria-controls="episodes" aria-selected="true">Upcoming Episodes</button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="shows-tab" data-bs-toggle="tab" data-bs-target="#shows" type="button" role="tab" aria-controls="shows" aria-selected="false">Recently Downloaded</button>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="tab-content" id="showTabsContent">
-                                <div class="tab-pane fade show active" id="episodes" role="tabpanel" aria-labelledby="episodes-tab">
+                    <ul class="nav nav-tabs mb-3" id="showTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="episodes-tab" data-bs-toggle="tab" data-bs-target="#episodes" type="button" role="tab" aria-controls="episodes" aria-selected="true">Upcoming Episodes</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="shows-tab" data-bs-toggle="tab" data-bs-target="#shows" type="button" role="tab" aria-controls="shows" aria-selected="false">Recently Downloaded</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="showTabsContent">
+                        <div class="tab-pane fade show active" id="episodes" role="tabpanel" aria-labelledby="episodes-tab">
                                     <?php
                                     $upcomingEpisodes = getUpcomingEpisodes($settings['sonarr_url'], $settings['sonarr_api_key'], $demoMode);
                                     if (empty($upcomingEpisodes)): 
@@ -267,11 +261,8 @@ require_once 'includes/header.php';
                                         </div>
                                     <?php endif; ?>
                                 </div>
-                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="tab-content">
-                                <div class="tab-pane fade show active" id="shows" role="tabpanel" aria-labelledby="shows-tab">
+                        <div class="tab-pane fade" id="shows" role="tabpanel" aria-labelledby="shows-tab">
                                     <div class="media-grid">
                                 <?php 
                                 // Filter TV shows from recent downloads
@@ -328,8 +319,6 @@ require_once 'includes/header.php';
                                     endforeach;
                                 endif;
                                 ?>
-                            </div>
-                                </div>
                             </div>
                         </div>
                     </div>
