@@ -146,7 +146,7 @@ require_once 'includes/header.php';
         <!-- SABnzbd Section -->
         <section class="card">
             <div class="card-header">
-                <h2><i class="fa fa-download"></i> SABnzbd Queue</h2>
+                <h2><i class="fa fa-download"></i> Downloads</h2>
                 <div class="btn-toolbar">
                     <div class="btn-group">
                         <a href="sabnzbd.php?view=history" class="btn btn-sm btn-secondary">View History</a>
@@ -219,106 +219,105 @@ require_once 'includes/header.php';
                     </ul>
                     <div class="tab-content" id="showTabsContent">
                         <div class="tab-pane fade show active" id="episodes" role="tabpanel" aria-labelledby="episodes-tab">
-                                    <?php
-                                    $upcomingEpisodes = getUpcomingEpisodes($settings['sonarr_url'], $settings['sonarr_api_key'], $demoMode);
-                                    if (empty($upcomingEpisodes)): 
-                                    ?>
-                                        <div class="alert alert-info">No upcoming episodes</div>
-                                    <?php else: ?>
-                                        <div class="episode-list">
-                                            <?php foreach (array_slice($upcomingEpisodes, 0, 5) as $episode): ?>
-                                                <div class="episode-item">
-                                                    <div class="episode-date">
-                                                        <?php 
-                                                        if (isset($episode['displayDate'])) {
-                                                            echo $episode['displayDate'];
-                                                        } else {
-                                                            $airDate = strtotime($episode['airDate']);
-                                                            $today = strtotime('today');
-                                                            $tomorrow = strtotime('tomorrow');
-                                                            
-                                                            if ($airDate == $today) {
-                                                                echo 'Today';
-                                                            } else if ($airDate == $tomorrow) {
-                                                                echo 'Tomorrow';
-                                                            } else {
-                                                                echo date('l', $airDate); // Weekday name
-                                                            }
-                                                        }
-                                                        ?>
-                                                    </div>
-                                                    <div class="episode-info">
-                                                        <?php if (isset($episode['series']['id'])): ?>
-                                                        <a href="show_details.php?id=<?php echo $episode['series']['id']; ?>" class="episode-show-link">
-                                                            <div class="episode-show"><?php echo isset($episode['series']['title']) && $episode['series']['title'] !== 'Unknown Show' ? htmlspecialchars($episode['series']['title']) : htmlspecialchars($episode['seriesTitle'] ?? 'Unknown Show'); ?></div>
-                                                        </a>
-                                                        <?php else: ?>
-                                                        <div class="episode-show"><?php echo isset($episode['series']['title']) && $episode['series']['title'] !== 'Unknown Show' ? htmlspecialchars($episode['series']['title']) : htmlspecialchars($episode['seriesTitle'] ?? 'Unknown Show'); ?></div>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </div>
-                                            <?php endforeach; ?>
+                            <?php
+                            $upcomingEpisodes = getUpcomingEpisodes($settings['sonarr_url'], $settings['sonarr_api_key'], $demoMode);
+                            if (empty($upcomingEpisodes)): 
+                            ?>
+                                <div class="alert alert-info">No upcoming episodes</div>
+                            <?php else: ?>
+                                <div class="episode-list">
+                                    <?php foreach (array_slice($upcomingEpisodes, 0, 5) as $episode): ?>
+                                        <div class="episode-item">
+                                            <div class="episode-date">
+                                                <?php 
+                                                if (isset($episode['displayDate'])) {
+                                                    echo $episode['displayDate'];
+                                                } else {
+                                                    $airDate = strtotime($episode['airDate']);
+                                                    $today = strtotime('today');
+                                                    $tomorrow = strtotime('tomorrow');
+                                                    
+                                                    if ($airDate == $today) {
+                                                        echo 'Today';
+                                                    } else if ($airDate == $tomorrow) {
+                                                        echo 'Tomorrow';
+                                                    } else {
+                                                        echo date('l', $airDate); // Weekday name
+                                                    }
+                                                }
+                                                ?>
+                                            </div>
+                                            <div class="episode-info">
+                                                <?php if (isset($episode['series']['id'])): ?>
+                                                <a href="show_details.php?id=<?php echo $episode['series']['id']; ?>" class="episode-show-link">
+                                                    <div class="episode-show"><?php echo isset($episode['series']['title']) && $episode['series']['title'] !== 'Unknown Show' ? htmlspecialchars($episode['series']['title']) : htmlspecialchars($episode['seriesTitle'] ?? 'Unknown Show'); ?></div>
+                                                </a>
+                                                <?php else: ?>
+                                                <div class="episode-show"><?php echo isset($episode['series']['title']) && $episode['series']['title'] !== 'Unknown Show' ? htmlspecialchars($episode['series']['title']) : htmlspecialchars($episode['seriesTitle'] ?? 'Unknown Show'); ?></div>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
-                                    <?php endif; ?>
+                                    <?php endforeach; ?>
                                 </div>
+                            <?php endif; ?>
                         </div>
                         <div class="tab-pane fade" id="tvshows" role="tabpanel" aria-labelledby="shows-tab">
-                                    <div class="media-grid">
-                                <?php 
-                                // Filter TV shows from recent downloads
-                                $recentTvShows = array_filter($recentDownloads ?? [], function($item) {
-                                    return $item['type'] === 'tv';
-                                });
-                                
-                                if (empty($recentTvShows)):
-                                ?>
-                                    <div class="alert alert-info">No recently downloaded TV shows found</div>
-                                <?php 
-                                else:
-                                    $recentTvShows = array_slice($recentTvShows, 0, 6);
-                                    foreach ($recentTvShows as $download): 
-                                        $hasImage = !empty($download['image']);
-                                        $showTitle = !empty($download['clean_name']) ? $download['clean_name'] : $download['name'];
+                            <div class="media-grid">
+                            <?php 
+                            // Filter TV shows from recent downloads
+                            $recentTvShows = array_filter($recentDownloads ?? [], function($item) {
+                                return $item['type'] === 'tv';
+                            });
+                            
+                            if (empty($recentTvShows)):
+                            ?>
+                                <div class="alert alert-info">No recently downloaded TV shows found</div>
+                            <?php 
+                            else:
+                                $recentTvShows = array_slice($recentTvShows, 0, 6);
+                                foreach ($recentTvShows as $download): 
+                                    $hasImage = !empty($download['image']);
+                                    $showTitle = !empty($download['clean_name']) ? $download['clean_name'] : $download['name'];
+                                    
+                                    // If there are multiple episodes, add count to the title
+                                    $episodeInfo = '';
+                                    if (isset($download['episodes_count']) && $download['episodes_count'] > 1) {
+                                        $episodeInfo = ' <span class="badge bg-primary">' . $download['episodes_count'] . ' episodes</span>';
+                                    } elseif (isset($download['season']) && isset($download['episode'])) {
+                                        $episodeInfo = ' <span class="text-muted">S' . str_pad($download['season'], 2, '0', STR_PAD_LEFT) . 
+                                            'E' . str_pad($download['episode'], 2, '0', STR_PAD_LEFT) . '</span>';
+                                    }
+                            ?>
+                                <div class="media-item">
+                                    <div class="download-item">
+                                        <?php if (isset($download['show_id'])): ?>
+                                        <a href="show_details.php?id=<?php echo $download['show_id']; ?>" class="text-decoration-none">
+                                        <?php endif; ?>
                                         
-                                        // If there are multiple episodes, add count to the title
-                                        $episodeInfo = '';
-                                        if (isset($download['episodes_count']) && $download['episodes_count'] > 1) {
-                                            $episodeInfo = ' <span class="badge bg-primary">' . $download['episodes_count'] . ' episodes</span>';
-                                        } elseif (isset($download['season']) && isset($download['episode'])) {
-                                            $episodeInfo = ' <span class="text-muted">S' . str_pad($download['season'], 2, '0', STR_PAD_LEFT) . 
-                                                'E' . str_pad($download['episode'], 2, '0', STR_PAD_LEFT) . '</span>';
-                                        }
-                                ?>
-                                    <div class="media-item">
-                                        <div class="download-item">
-                                            <?php if (isset($download['show_id'])): ?>
-                                            <a href="show_details.php?id=<?php echo $download['show_id']; ?>" class="text-decoration-none">
-                                            <?php endif; ?>
-                                            
-                                            <?php if ($hasImage): ?>
-                                                <div class="media-poster" style="background-image: url('<?php echo htmlspecialchars($download['image']); ?>')"></div>
-                                            <?php else: ?>
-                                                <div class="media-poster no-image">
-                                                    <i class="fa fa-tv"></i>
-                                                </div>
-                                            <?php endif; ?>
-                                            
-                                            <div class="media-title">
-                                                <?php echo htmlspecialchars($showTitle); ?>
-                                                <?php echo $episodeInfo; ?>
+                                        <?php if ($hasImage): ?>
+                                            <div class="media-poster" style="background-image: url('<?php echo htmlspecialchars($download['image']); ?>')"></div>
+                                        <?php else: ?>
+                                            <div class="media-poster no-image">
+                                                <i class="fa fa-tv"></i>
                                             </div>
-                                            
-                                            <?php if (isset($download['show_id'])): ?>
-                                            </a>
-                                            <?php endif; ?>
-                                            
-                                            <div class="media-year"><?php echo date('M j, Y', strtotime($download['completed'])); ?></div>
+                                        <?php endif; ?>
+                                        
+                                        <div class="media-title">
+                                            <?php echo htmlspecialchars($showTitle); ?>
+                                            <?php echo $episodeInfo; ?>
                                         </div>
+                                        
+                                        <?php if (isset($download['show_id'])): ?>
+                                        </a>
+                                        <?php endif; ?>
+                                        
+                                        <div class="media-year"><?php echo date('M j, Y', strtotime($download['completed'])); ?></div>
                                     </div>
-                                <?php 
-                                    endforeach;
-                                endif;
-                                ?>
+                                </div>
+                            <?php 
+                                endforeach;
+                            endif;
+                            ?>
                             </div>
                         </div>
                     </div>
@@ -338,14 +337,14 @@ require_once 'includes/header.php';
                 <?php else: ?>
                     <ul class="nav nav-tabs mb-3" id="movieTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="recent-tab" data-bs-toggle="tab" data-bs-target="#recent" type="button" role="tab" aria-controls="recent" aria-selected="true">Recently Downloaded</button>
+                            <button class="nav-link active" id="recent-movies-tab" data-bs-toggle="tab" data-bs-target="#recent-movies" type="button" role="tab" aria-controls="recent-movies" aria-selected="true">Recently Downloaded</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab" aria-controls="upcoming" aria-selected="false">Upcoming</button>
+                            <button class="nav-link" id="upcoming-movies-tab" data-bs-toggle="tab" data-bs-target="#upcoming-movies" type="button" role="tab" aria-controls="upcoming-movies" aria-selected="false">Upcoming</button>
                         </li>
                     </ul>
                     <div class="tab-content" id="movieTabsContent">
-                        <div class="tab-pane fade show active" id="recent" role="tabpanel" aria-labelledby="recent-tab">
+                        <div class="tab-pane fade show active" id="recent-movies" role="tabpanel" aria-labelledby="recent-movies-tab">
                             <div class="media-grid">
                                 <?php 
                                 // Filter movies from recent downloads
@@ -396,7 +395,7 @@ require_once 'includes/header.php';
                                 ?>
                             </div>
                         </div>
-                        <div class="tab-pane fade" id="upcoming" role="tabpanel" aria-labelledby="upcoming-tab">
+                        <div class="tab-pane fade" id="upcoming-movies" role="tabpanel" aria-labelledby="upcoming-movies-tab">
                             <?php if (empty($upcomingMovies)): ?>
                                 <div class="alert alert-info">No upcoming movies found</div>
                             <?php else: ?>
