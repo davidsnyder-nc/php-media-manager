@@ -1742,7 +1742,13 @@ function getSampleSabnzbdHistory($limit = 10) {
     $slots = [];
     $now = new DateTime();
     
-    for ($i = 0; $i < $limit; $i++) {
+    // Calculate how many TV shows and movies to create
+    // Ensure at least 6 of each type for UI display requirements
+    $tvCount = min(6, ceil($limit / 2)); 
+    $movieCount = min(6, floor($limit / 2));
+    
+    // Create TV shows first (at least 6)
+    for ($i = 0; $i < $tvCount; $i++) {
         $completed = clone $now;
         $completed->modify('-' . rand(1, 14) . ' days');
         $completed->modify('-' . rand(0, 23) . ' hours');
@@ -1750,8 +1756,8 @@ function getSampleSabnzbdHistory($limit = 10) {
         
         $sizeGb = rand(1, 30);
         
-        // Determine type and name
-        $type = ($i % 3 == 0) ? 'movie' : 'tv';
+        // Always TV for first set
+        $type = 'tv';
         $name = '';
         $category = $type;
         
@@ -1767,6 +1773,40 @@ function getSampleSabnzbdHistory($limit = 10) {
             $year = rand(1990, 2023);
             $name = str_replace(' ', '.', $movieName) . '.' . $year . '.1080p.BluRay.x264';
         }
+        
+        $slots[] = [
+            'id' => 'history_' . rand(1000000, 9999999),
+            'name' => $name,
+            'status' => 'Completed',
+            'bytes' => $sizeGb * 1024 * 1024 * 1024,
+            'size' => $sizeGb . ' GB',
+            'category' => $category,
+            'completed' => $completed->format('Y-m-d\TH:i:s\Z'),
+            'nzo_id' => 'nzo_' . rand(10000000, 99999999),
+            'download_time' => rand(1800, 14400),
+            'type' => $type,
+            'size_float' => $sizeGb
+        ];
+    }
+    
+    // Now add the movie downloads
+    for ($i = 0; $i < $movieCount; $i++) {
+        $completed = clone $now;
+        $completed->modify('-' . rand(1, 14) . ' days');
+        $completed->modify('-' . rand(0, 23) . ' hours');
+        $completed->modify('-' . rand(0, 59) . ' minutes');
+        
+        $sizeGb = rand(1, 30);
+        
+        // Always movie for second set
+        $type = 'movie';
+        $name = '';
+        $category = $type;
+        
+        $movies = ['The Shawshank Redemption', 'The Dark Knight', 'Inception', 'Interstellar', 'Pulp Fiction', 'The Matrix'];
+        $movieName = $movies[array_rand($movies)];
+        $year = rand(1990, 2023);
+        $name = str_replace(' ', '.', $movieName) . '.' . $year . '.1080p.BluRay.x264';
         
         $slots[] = [
             'id' => 'history_' . rand(1000000, 9999999),
@@ -1805,9 +1845,11 @@ function getSampleSabnzbdHistory($limit = 10) {
  * @return array Processed download items with metadata
  */
 function processRecentDownloads($downloads, $shows, $movies, $demoMode = false) {
-    // If demo mode is enabled and there are no downloads, generate sample data
+    // If demo mode is enabled and there are no downloads, use sample history data
     if ($demoMode && empty($downloads)) {
-        $downloads = getSampleDownloadHistory();
+        // Use the sample history data instead
+        $sampleHistory = getSampleSabnzbdHistory(12);
+        $downloads = isset($sampleHistory['slots']) ? $sampleHistory['slots'] : [];
     }
     
     // If still no downloads or no metadata, return empty array
