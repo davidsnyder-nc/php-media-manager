@@ -397,11 +397,18 @@ body {
   grid-template-columns: repeat(2, 1fr);
   gap: 15px;
   margin-bottom: 20px;
+  width: 100%;
 }
 
 @media (min-width: 768px) {
   .stats-row {
     grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .stats-row {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -424,8 +431,14 @@ body {
   flex: 1;
 }
 
+.sabnzbd-container {
+  width: 100%;
+  padding: 0;
+}
+
 .sabnzbd-section {
   margin-bottom: 30px;
+  width: 100%;
 }
 
 .section-header {
@@ -816,6 +829,15 @@ footer {
   font-size: 0.85rem;
   background-color: var(--secondary-bg-color);
   border-top: 1px solid var(--border-color);
+  width: 100%;
+  left: 0;
+  right: 0;
+}
+
+footer .container {
+  width: 100%;
+  padding-left: 15px;
+  padding-right: 15px;
 }
 
 /* Animation for loading elements */
