@@ -228,6 +228,7 @@ require_once 'includes/header.php';
                                 <div class="episode-list">
                                     <?php foreach (array_slice($upcomingEpisodes, 0, 5) as $episode): ?>
                                         <div class="episode-item">
+                                            <!-- Display date (Today, Tomorrow, day of week) -->
                                             <div class="episode-date">
                                                 <?php 
                                                 if (isset($episode['displayDate'])) {
@@ -247,6 +248,8 @@ require_once 'includes/header.php';
                                                 }
                                                 ?>
                                             </div>
+                                            
+                                            <!-- Display show name and episode number on new line -->
                                             <div class="episode-info">
                                                 <?php if (isset($episode['series']['id'])): ?>
                                                 <a href="show_details.php?id=<?php echo $episode['series']['id']; ?>" class="episode-show-link">
@@ -255,6 +258,7 @@ require_once 'includes/header.php';
                                                 <?php else: ?>
                                                 <span class="episode-show"><?php echo isset($episode['series']['title']) && $episode['series']['title'] !== 'Unknown Show' ? htmlspecialchars($episode['series']['title']) : htmlspecialchars($episode['seriesTitle'] ?? 'Unknown Show'); ?></span>
                                                 <?php endif; ?>
+                                                
                                                 <?php if (isset($episode['seasonNumber']) && isset($episode['episodeNumber'])): ?>
                                                 <span class="episode-number text-muted ms-1">S<?php echo str_pad($episode['seasonNumber'], 2, '0', STR_PAD_LEFT); ?>E<?php echo str_pad($episode['episodeNumber'], 2, '0', STR_PAD_LEFT); ?></span>
                                                 <?php endif; ?>
