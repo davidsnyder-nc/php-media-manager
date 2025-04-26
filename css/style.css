@@ -101,8 +101,8 @@ body {
 }
 
 .nav-tabs .nav-link.active {
-  border-color: var(--border-color) var(--border-color) #fff;
-  background-color: #fff;
+  border-color: var(--border-color) var(--border-color) var(--secondary-bg-color);
+  background-color: var(--secondary-bg-color);
   color: #007bff;
 }
 
@@ -111,7 +111,7 @@ body {
   border-top: none;
   padding: 15px;
   border-radius: 0 0 0.25rem 0.25rem;
-  background-color: #fff;
+  background-color: var(--secondary-bg-color);
 }
 
 @media (min-width: 768px) {
@@ -148,6 +148,10 @@ body {
   background-color: rgba(0, 0, 0, 0.03);
   border-bottom: 1px solid var(--border-color);
   padding: 0.75rem 1.25rem;
+}
+
+[data-theme="dark"] .card-header {
+  background-color: rgba(255, 255, 255, 0.03);
 }
 
 .card-header h2 {
@@ -298,6 +302,10 @@ body {
   margin: 0 5px;
 }
 
+[data-theme="dark"] .stat-box {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
 .stat-value {
   font-size: 1.4rem;
   font-weight: 600;
@@ -317,6 +325,10 @@ body {
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 10px;
+}
+
+[data-theme="dark"] .queue-item {
+  background-color: rgba(255, 255, 255, 0.03);
 }
 
 .item-name {
@@ -350,8 +362,16 @@ body {
   transition: background-color 0.2s ease;
 }
 
+[data-theme="dark"] .episode-item {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
 .episode-item:hover {
   background-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .episode-item:hover {
+  background-color: rgba(255, 255, 255, 0.06);
 }
 
 .episode-date {
@@ -871,10 +891,20 @@ footer .container {
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
+[data-theme="dark"] .download-item {
+  background-color: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
 .download-item:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 20px rgba(0,0,0,0.15);
   background-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .download-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
 }
 
 .download-item .media-title {
