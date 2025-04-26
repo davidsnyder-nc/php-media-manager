@@ -396,6 +396,10 @@ body {
   color: #343a40;
 }
 
+[data-theme="dark"] .episode-show {
+  color: #e0e0e0;
+}
+
 .episode-show-link {
   text-decoration: none;
   color: inherit;
@@ -775,6 +779,10 @@ body {
   padding: 10px;
   background-color: rgba(0, 0, 0, 0.03);
   border-radius: 8px;
+}
+
+[data-theme="dark"] .rating-item {
+  background-color: rgba(255, 255, 255, 0.03);
 }
 
 .rating-label {
