@@ -1,29 +1,26 @@
-# Release v2025.04.26.0938
+# Release v2025.04.26.0955
 
 ## What's New
 
-- **Demo Mode Improvements**:
-  - Enhanced demo mode to work without requiring any API configuration
-  - Fixed demo data handling in TV shows, movies, and downloads sections
-  - Added robust error handling for demo mode data
-  - Added new demo status page for checking configuration
-  - Fixed sorting functions to handle null values properly
+- **UI Improvements**:
+  - Completely removed footer for cleaner interface
+  - Improved layout for better viewing experience
+
+- **API Integration Enhancements**:
+  - Modified to get recently downloaded TV shows directly from Sonarr API (not SABnzbd)
+  - Modified to get recently downloaded movies directly from Radarr API (not SABnzbd)
+  - Consistent display of 6 items per section in TV shows and movies
+  - Enhanced error handling for API connections
 
 - **Bug Fixes**:
-  - Fixed issues with TV show and movie detail pages in demo mode
-  - Improved error handling throughout the application
-  - Fixed display issues on smaller screens
-  - Corrected sorting functions for shows and movies
+  - Fixed "Unknown Show" issue in upcoming episodes display
+  - Improved error handling to prevent missing show information
+  - Better fallback handling when API connections are unavailable
 
-- **Performance Enhancements**: 
-  - Added more comprehensive error checking
-  - Optimized demo mode data handling
-  - Fixed array handling to prevent PHP warnings
-
-- **Development Tools**:
-  - Added demo_status.php for checking demo mode configuration
-  - Added enable_demo_mode.php for directly enabling demo mode
-  - Enhanced error logging for easier debugging
+- **Code Quality**:
+  - Enhanced error checking throughout the application
+  - Optimized API data retrieval functions
+  - More robust handling of empty or error responses
 
 ## Files
 
