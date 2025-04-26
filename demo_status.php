@@ -36,7 +36,11 @@ echo "<!DOCTYPE html>
   
   <p>
     <a href='index.php'>Back to Dashboard</a> | 
-    <a href='enable_demo_mode.php'>Enable Demo Mode</a> | 
+    <?php if ($demoMode): ?>
+    <a href='disable_demo_mode.php'>Disable Demo Mode</a> |
+    <?php else: ?>
+    <a href='enable_demo_mode.php'>Enable Demo Mode</a> |
+    <?php endif; ?>
     <a href='settings.php'>Settings Page</a>
   </p>
 </body>

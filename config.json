@@ -6,5 +6,5 @@
     "sabnzbd_url": "",
     "sabnzbd_api_key": "",
     "theme": "light",
-    "demo_mode": "enabled"
+    "demo_mode": "disabled"
 }
