@@ -357,7 +357,7 @@ require_once 'includes/header.php';
                                     <div class="alert alert-info">No recently downloaded movies found</div>
                                 <?php 
                                 else:
-                                    $recentMovieDownloads = array_slice($recentMovieDownloads, 0, 12);
+                                    $recentMovieDownloads = array_slice($recentMovieDownloads, 0, 6);
                                     foreach ($recentMovieDownloads as $download): 
                                         $hasImage = !empty($download['image']);
                                         $movieTitle = !empty($download['clean_name']) ? $download['clean_name'] : $download['name'];
