@@ -257,12 +257,15 @@ function getSonarrEpisodes($url, $apiKey, $seriesId, $demoMode = false) {
  * @return array Array of upcoming episodes
  */
 function getUpcomingEpisodes($url, $apiKey, $demoMode = false) {
-    // If demo mode is enabled, return sample data first
+    // If demo mode is enabled, return sample data
     if ($demoMode) {
         return getSampleUpcomingEpisodes();
     }
     
-    // Otherwise try the real API if URL and key are provided
+    // Initialize episodes to an empty array
+    $episodes = [];
+    
+    // Try the real API if URL and key are provided
     if (!empty($url) && !empty($apiKey)) {
         $episodes = makeApiRequest($url, 'api/v3/calendar', [
             'start' => date('Y-m-d'),
@@ -271,18 +274,12 @@ function getUpcomingEpisodes($url, $apiKey, $demoMode = false) {
             'includeEpisodeImages' => 'false',
             'includeSeriesImages' => 'false'
         ], $apiKey);
-        
-        if ($episodes && is_array($episodes)) {
-            return $episodes;
-        }
     }
     
-    // If we get here, either API request failed or we don't have real credentials
-    // Only use sample data if demo mode was explicitly requested
-    if ($demoMode) {
-        return getSampleUpcomingEpisodes();
-    } elseif (!$episodes || !is_array($episodes)) {
-        return [];
+    // Check if we got valid data
+    if (!$episodes || !is_array($episodes)) {
+        // Return sample data if demo mode, empty array otherwise
+        return $demoMode ? getSampleUpcomingEpisodes() : [];
     }
     
     // Get all shows for reference
