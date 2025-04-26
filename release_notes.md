@@ -1,3 +1,29 @@
+# Release v2025.04.26.0919
+
+## What's New
+
+- **Demo Mode Toggle Support**:
+  - Added disable_demo_mode.php script to fully disable demo mode directly
+  - Updated demo_status.php to conditionally show demo mode toggle links
+  - Fixed critical issue that was forcing demo mode to remain enabled
+  - Fixed configuration handling to properly respect demo mode settings
+
+- **Bug Fixes**:
+  - Removed forced demo mode override in config.php
+  - Added diagnostic logging to help troubleshoot demo mode issues
+  - Fixed settings display on demo status page
+  - Improved consistency in demo mode behavior
+
+- **UI Improvements**:
+  - Enhanced stats blocks alignment for better mobile display
+  - Fixed footer width issues on mobile devices
+  - Updated upcoming episodes display for better readability
+
+- **Development Tools**:
+  - Added disable_demo_mode.php for directly disabling demo mode
+  - Improved debug output for settings status
+  - Fixed issues with demo mode toggling
+
 # Release v2025.04.26.0845
 
 ## What's New
