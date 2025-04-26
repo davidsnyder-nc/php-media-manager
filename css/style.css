@@ -84,6 +84,19 @@ body {
 .nav-tabs .nav-link {
   width: 100%;
   border-radius: 0.25rem 0.25rem 0 0;
+  margin-right: 0;
+  border-bottom: 1px solid transparent;
+}
+
+.nav-tabs .nav-link.active {
+  border-color: var(--border-color) var(--border-color) #fff;
+}
+
+.tab-content {
+  border: 1px solid var(--border-color);
+  border-top: none;
+  padding: 15px;
+  border-radius: 0 0 0.25rem 0.25rem;
 }
 
 @media (min-width: 768px) {
@@ -322,12 +335,17 @@ body {
 }
 
 .episode-date {
+  min-width: 70px;
   width: 70px;
   font-weight: 500;
 }
 
 .episode-info {
   flex: 1;
+  width: calc(100% - 80px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .episode-show {

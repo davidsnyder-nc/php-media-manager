@@ -1071,6 +1071,15 @@ function getImageProxyUrl($item, $type = 'poster') {
  * @return array Array of sample TV shows
  */
 function getSampleTvShows() {
+    // Add timestamp-based seed for randomness
+    $timestamp = time();
+    $dayOfYear = date('z', $timestamp);
+    $hourOfDay = date('G', $timestamp);
+    
+    // Use a combination of day of year and hour to create pseudo-random content rotation
+    $seed = $dayOfYear + $hourOfDay;
+    srand($seed);
+    
     $shows = [
         [
             'id' => 1,
@@ -1212,7 +1221,11 @@ function getSampleTvShows() {
         ]
     ];
     
-    return $shows;
+    // Shuffle the shows array to get different ordering each time
+    shuffle($shows);
+    
+    // Return a subset of shows to create variation
+    return array_slice($shows, 0, min(count($shows), 6 + ($seed % 3)));
 }
 
 /**
