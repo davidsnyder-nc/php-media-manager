@@ -30,6 +30,10 @@ $sabnzbdData = [];
 // Check for demo mode
 $demoMode = isset($settings['demo_mode']) && $settings['demo_mode'] === 'enabled';
 
+// Debug output for troubleshooting
+error_log("Demo mode check - Raw value: " . ($settings['demo_mode'] ?? 'not set'));
+error_log("Demo mode evaluation result: " . ($demoMode ? 'true' : 'false'));
+
 // Check if we have all necessary settings
 $hasAllSettings = (!empty($settings['sonarr_url']) && !empty($settings['sonarr_api_key']) &&
                   !empty($settings['radarr_url']) && !empty($settings['radarr_api_key']) &&
