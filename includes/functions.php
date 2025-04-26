@@ -1424,6 +1424,15 @@ function getSampleUpcomingEpisodes() {
  * @return array Array of sample movies
  */
 function getSampleMovies() {
+    // Add timestamp-based seed for randomness
+    $timestamp = time();
+    $dayOfYear = date('z', $timestamp);
+    $hourOfDay = date('G', $timestamp);
+    
+    // Use a combination of day of year and hour to create pseudo-random content rotation
+    $seed = $dayOfYear + $hourOfDay;
+    srand($seed);
+    
     $movies = [
         [
             'id' => 101,
@@ -1555,7 +1564,11 @@ function getSampleMovies() {
         ]
     ];
     
-    return $movies;
+    // Shuffle the movies array to get different ordering each time
+    shuffle($movies);
+    
+    // Return a subset of movies to create variation
+    return array_slice($movies, 0, min(count($movies), 6 + ($seed % 3)));
 }
 
 /**
