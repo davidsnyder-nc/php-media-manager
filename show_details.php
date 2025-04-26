@@ -330,7 +330,7 @@ require_once 'includes/header.php';
                                     
                                     foreach ($season['episodes'] as $episode): 
                                     ?>
-                                        <div class="episode-item">
+                                        <div class="episode-list-item">
                                             <div class="episode-number">
                                                 S<?php echo str_pad($episode['seasonNumber'], 2, '0', STR_PAD_LEFT); ?>E<?php echo str_pad($episode['episodeNumber'], 2, '0', STR_PAD_LEFT); ?>
                                             </div>

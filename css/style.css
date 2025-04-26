@@ -357,13 +357,12 @@ body {
 .episode-date {
   font-weight: 600;
   font-size: 0.95rem;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
   color: #007bff;
 }
 
 .episode-info {
-  display: flex;
-  align-items: center;
+  display: block;
   padding-left: 5px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -693,7 +692,8 @@ body {
   margin-bottom: 10px;
 }
 
-.episode-item {
+/* Season/Episode List Item - used on show details page */
+.episode-list-item {
   display: grid;
   grid-template-columns: 80px 1fr 120px 120px;
   gap: 10px;
@@ -701,7 +701,7 @@ body {
   border-bottom: 1px solid var(--border-color);
 }
 
-.episode-item:last-child {
+.episode-list-item:last-child {
   border-bottom: none;
 }
 
@@ -799,7 +799,7 @@ body {
     gap: 5px;
   }
   
-  .episode-list-header, .episode-item {
+  .episode-list-header, .episode-list-item {
     grid-template-columns: 70px 1fr 90px;
   }
   
