@@ -214,7 +214,7 @@ require_once 'includes/header.php';
                             <button class="nav-link active" id="episodes-tab" data-bs-toggle="tab" data-bs-target="#episodes" type="button" role="tab" aria-controls="episodes" aria-selected="true">Upcoming Episodes</button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="shows-tab" data-bs-toggle="tab" data-bs-target="#shows" type="button" role="tab" aria-controls="shows" aria-selected="false">Recently Downloaded</button>
+                            <button class="nav-link" id="shows-tab" data-bs-toggle="tab" data-bs-target="#tvshows" type="button" role="tab" aria-controls="tvshows" aria-selected="false">Recently Downloaded</button>
                         </li>
                     </ul>
                     <div class="tab-content" id="showTabsContent">
@@ -262,7 +262,7 @@ require_once 'includes/header.php';
                                     <?php endif; ?>
                                 </div>
                         </div>
-                        <div class="tab-pane fade" id="shows" role="tabpanel" aria-labelledby="shows-tab">
+                        <div class="tab-pane fade" id="tvshows" role="tabpanel" aria-labelledby="shows-tab">
                                     <div class="media-grid">
                                 <?php 
                                 // Filter TV shows from recent downloads
