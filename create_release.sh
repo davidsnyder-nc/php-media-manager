@@ -1,43 +1,17 @@
 #!/bin/bash
 
-# Set the version number
-VERSION=$(date +%Y.%m.%d.%H%M)
+# Extract the version number from release_notes.md
+VERSION=$(grep -m 1 "^# Release v" release_notes.md | sed 's/^# Release v//')
+if [ -z "$VERSION" ]; then
+  # Fallback if not found
+  VERSION=$(date +%Y.%m.%d.%H%M)
+  echo "Warning: Version not found in release_notes.md, using current date/time: $VERSION"
+fi
+
 TAG_NAME="v$VERSION"
 GITHUB_REPO="davidsnyder-nc/php-media-manager"
 
-# Create release notes
-cat > release_notes.md << EOL
-# Release v$VERSION
-
-## What's New
-
-- **Demo Mode Improvements**:
-  - Enhanced demo mode to work without requiring any API configuration
-  - Fixed demo data handling in TV shows, movies, and downloads sections
-  - Added robust error handling for demo mode data
-  - Added new demo status page for checking configuration
-  - Fixed sorting functions to handle null values properly
-
-- **Bug Fixes**:
-  - Fixed issues with TV show and movie detail pages in demo mode
-  - Improved error handling throughout the application
-  - Fixed display issues on smaller screens
-  - Corrected sorting functions for shows and movies
-
-- **Performance Enhancements**: 
-  - Added more comprehensive error checking
-  - Optimized demo mode data handling
-  - Fixed array handling to prevent PHP warnings
-
-- **Development Tools**:
-  - Added demo_status.php for checking demo mode configuration
-  - Added enable_demo_mode.php for directly enabling demo mode
-  - Enhanced error logging for easier debugging
-
-## Files
-
-- **Full Package**: php-media-manager.zip - Complete website with all dependencies
-EOL
+# Don't overwrite release_notes.md as it's manually created now
 
 # Create a GitHub release
 echo "Creating GitHub release for v$VERSION..."

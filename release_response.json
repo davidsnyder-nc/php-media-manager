@@ -1,42 +1,12 @@
 {
-  "url": "https://api.github.com/repos/davidsnyder-nc/php-media-manager/releases/214940130",
-  "assets_url": "https://api.github.com/repos/davidsnyder-nc/php-media-manager/releases/214940130/assets",
-  "upload_url": "https://uploads.github.com/repos/davidsnyder-nc/php-media-manager/releases/214940130/assets{?name,label}",
-  "html_url": "https://github.com/davidsnyder-nc/php-media-manager/releases/tag/v2025.04.26.0920",
-  "id": 214940130,
-  "author": {
-    "login": "davidsnyder-nc",
-    "id": 178180347,
-    "node_id": "U_kgDOCp7Q-w",
-    "avatar_url": "https://avatars.githubusercontent.com/u/178180347?v=4",
-    "gravatar_id": "",
-    "url": "https://api.github.com/users/davidsnyder-nc",
-    "html_url": "https://github.com/davidsnyder-nc",
-    "followers_url": "https://api.github.com/users/davidsnyder-nc/followers",
-    "following_url": "https://api.github.com/users/davidsnyder-nc/following{/other_user}",
-    "gists_url": "https://api.github.com/users/davidsnyder-nc/gists{/gist_id}",
-    "starred_url": "https://api.github.com/users/davidsnyder-nc/starred{/owner}{/repo}",
-    "subscriptions_url": "https://api.github.com/users/davidsnyder-nc/subscriptions",
-    "organizations_url": "https://api.github.com/users/davidsnyder-nc/orgs",
-    "repos_url": "https://api.github.com/users/davidsnyder-nc/repos",
-    "events_url": "https://api.github.com/users/davidsnyder-nc/events{/privacy}",
-    "received_events_url": "https://api.github.com/users/davidsnyder-nc/received_events",
-    "type": "User",
-    "user_view_type": "public",
-    "site_admin": false
-  },
-  "node_id": "RE_kwDOOfqXX84Mz7ni",
-  "tag_name": "v2025.04.26.0920",
-  "target_commitish": "main",
-  "name": "Release v2025.04.26.0920",
-  "draft": false,
-  "prerelease": false,
-  "created_at": "2025-04-26T09:18:09Z",
-  "published_at": "2025-04-26T09:20:28Z",
-  "assets": [
-
+  "message": "Validation Failed",
+  "errors": [
+    {
+      "resource": "Release",
+      "code": "already_exists",
+      "field": "tag_name"
+    }
   ],
-  "tarball_url": "https://api.github.com/repos/davidsnyder-nc/php-media-manager/tarball/v2025.04.26.0920",
-  "zipball_url": "https://api.github.com/repos/davidsnyder-nc/php-media-manager/zipball/v2025.04.26.0920",
-  "body": "# Release v2025.04.26.0920\n\n## What's New\n\n- **Demo Mode Improvements**:\n  - Enhanced demo mode to work without requiring any API configuration\n  - Fixed demo data handling in TV shows, movies, and downloads sections\n  - Added robust error handling for demo mode data\n  - Added new demo status page for checking configuration\n  - Fixed sorting functions to handle null values properly\n\n- **Bug Fixes**:\n  - Fixed issues with TV show and movie detail pages in demo mode\n  - Improved error handling throughout the application\n  - Fixed display issues on smaller screens\n  - Corrected sorting functions for shows and movies\n\n- **Performance Enhancements**: \n  - Added more comprehensive error checking\n  - Optimized demo mode data handling\n  - Fixed array handling to prevent PHP warnings\n\n- **Development Tools**:\n  - Added demo_status.php for checking demo mode configuration\n  - Added enable_demo_mode.php for directly enabling demo mode\n  - Enhanced error logging for easier debugging\n\n## Files\n\n- **Full Package**: php-media-manager.zip - Complete website with all dependencies\n"
+  "documentation_url": "https://docs.github.com/rest/releases/releases#create-a-release",
+  "status": "422"
 }
