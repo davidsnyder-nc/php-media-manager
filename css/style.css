@@ -849,24 +849,7 @@ body {
   }
 }
 
-/* Footer */
-footer {
-  margin-top: auto;
-  padding: 15px 0;
-  text-align: center;
-  font-size: 0.85rem;
-  background-color: var(--secondary-bg-color);
-  border-top: 1px solid var(--border-color);
-  width: 100%;
-  left: 0;
-  right: 0;
-}
 
-footer .container {
-  width: 100%;
-  padding-left: 15px;
-  padding-right: 15px;
-}
 
 /* Animation for loading elements */
 @keyframes fadeIn {
