@@ -1,6 +1,8 @@
 <?php
 /**
- * Quick script to directly enable demo mode
+ * Enable Demo Mode
+ * 
+ * Direct script to enable demo mode without going to settings page
  */
 
 // Include config functions
@@ -9,23 +11,28 @@ require_once 'config.php';
 // Get current settings
 $settings = loadSettings();
 
-// Force demo mode to enabled
+// Set demo mode to enabled
 $settings['demo_mode'] = 'enabled';
 
 // Save settings
 $result = saveSettings($settings);
 
-// Show result
+// Prepare the response message
 if ($result) {
-    echo "Demo mode has been enabled successfully!<br>";
-    echo '<a href="index.php">Go to Dashboard</a>';
+    $message = [
+        'type' => 'success',
+        'title' => 'Demo Mode Enabled',
+        'text' => 'Demo mode has been successfully enabled. The system will now use sample data when API connections are not available.'
+    ];
 } else {
-    echo "Failed to enable demo mode. Check file permissions.<br>";
-    
-    // Try to debug the issue
-    echo "<h3>Debug Information:</h3>";
-    echo "CONFIG_FILE path: " . CONFIG_FILE . "<br>";
-    echo "Is writable: " . (is_writable(CONFIG_FILE) ? "Yes" : "No") . "<br>";
-    echo "Current settings: <pre>" . print_r($settings, true) . "</pre>";
+    $message = [
+        'type' => 'danger',
+        'title' => 'Error',
+        'text' => 'There was a problem enabling demo mode. Please check file permissions.'
+    ];
 }
+
+// Redirect with message in query string for alert display
+header('Location: index.php?message_type=' . $message['type'] . '&message_title=' . urlencode($message['title']) . '&message_text=' . urlencode($message['text']));
+exit;
 ?>

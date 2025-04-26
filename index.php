@@ -201,7 +201,7 @@ require_once 'includes/header.php';
 
         <!-- Sonarr Section -->
         <section class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h2><i class="fa fa-tv"></i> TV Shows</h2>
                 <a href="sonarr.php" class="btn btn-sm btn-primary">View All Shows</a>
             </div>
@@ -209,38 +209,61 @@ require_once 'includes/header.php';
                 <?php if (empty($sonarrData)): ?>
                     <div class="alert alert-info">No TV shows found or unable to connect to Sonarr</div>
                 <?php else: ?>
-                    <ul class="nav nav-tabs mb-3" id="showTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="episodes-tab" data-bs-toggle="tab" data-bs-target="#episodes" type="button" role="tab" aria-controls="episodes" aria-selected="true">Upcoming Episodes</button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="shows-tab" data-bs-toggle="tab" data-bs-target="#shows" type="button" role="tab" aria-controls="shows" aria-selected="false">Recently Downloaded</button>
-                        </li>
-                    </ul>
-                    <div class="tab-content" id="showTabsContent">
-                        <div class="tab-pane fade show active" id="episodes" role="tabpanel" aria-labelledby="episodes-tab">
-                            <?php
-                            $upcomingEpisodes = getUpcomingEpisodes($settings['sonarr_url'], $settings['sonarr_api_key'], $demoMode);
-                            if (empty($upcomingEpisodes)): 
-                            ?>
-                                <div class="alert alert-info">No upcoming episodes</div>
-                            <?php else: ?>
-                                <div class="episode-list">
-                                    <?php foreach (array_slice($upcomingEpisodes, 0, 5) as $episode): ?>
-                                        <div class="episode-item">
-                                            <div class="episode-date"><?php echo date('M d', strtotime($episode['airDate'])); ?></div>
-                                            <div class="episode-info">
-                                                <?php if (isset($episode['series']['id'])): ?>
-                                                <a href="show_details.php?id=<?php echo $episode['series']['id']; ?>" class="episode-show-link">
-                                                    <div class="episode-show"><?php echo isset($episode['series']['title']) && $episode['series']['title'] !== 'Unknown Show' ? htmlspecialchars($episode['series']['title']) : htmlspecialchars($episode['seriesTitle'] ?? 'Unknown Show'); ?></div>
-                                                </a>
-                                                <?php else: ?>
-                                                <div class="episode-show"><?php echo isset($episode['series']['title']) && $episode['series']['title'] !== 'Unknown Show' ? htmlspecialchars($episode['series']['title']) : htmlspecialchars($episode['seriesTitle'] ?? 'Unknown Show'); ?></div>
-                                                <?php endif; ?>
-                                                <div class="episode-title">S<?php echo str_pad($episode['seasonNumber'], 2, '0', STR_PAD_LEFT); ?>E<?php echo str_pad($episode['episodeNumber'], 2, '0', STR_PAD_LEFT); ?> - <?php echo htmlspecialchars($episode['title']); ?></div>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <ul class="nav nav-tabs" id="showTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="episodes-tab" data-bs-toggle="tab" data-bs-target="#episodes" type="button" role="tab" aria-controls="episodes" aria-selected="true">Upcoming Episodes</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="shows-tab" data-bs-toggle="tab" data-bs-target="#shows" type="button" role="tab" aria-controls="shows" aria-selected="false">Recently Downloaded</button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="tab-content" id="showTabsContent">
+                                <div class="tab-pane fade show active" id="episodes" role="tabpanel" aria-labelledby="episodes-tab">
+                                    <?php
+                                    $upcomingEpisodes = getUpcomingEpisodes($settings['sonarr_url'], $settings['sonarr_api_key'], $demoMode);
+                                    if (empty($upcomingEpisodes)): 
+                                    ?>
+                                        <div class="alert alert-info">No upcoming episodes</div>
+                                    <?php else: ?>
+                                        <div class="episode-list">
+                                            <?php foreach (array_slice($upcomingEpisodes, 0, 5) as $episode): ?>
+                                                <div class="episode-item">
+                                                    <div class="episode-date">
+                                                        <?php 
+                                                        if (isset($episode['displayDate'])) {
+                                                            echo $episode['displayDate'];
+                                                        } else {
+                                                            $airDate = strtotime($episode['airDate']);
+                                                            $today = strtotime('today');
+                                                            $tomorrow = strtotime('tomorrow');
+                                                            
+                                                            if ($airDate == $today) {
+                                                                echo 'Today';
+                                                            } else if ($airDate == $tomorrow) {
+                                                                echo 'Tomorrow';
+                                                            } else {
+                                                                echo date('l', $airDate); // Weekday name
+                                                            }
+                                                        }
+                                                        ?>
+                                                    </div>
+                                                    <div class="episode-info">
+                                                        <?php if (isset($episode['series']['id'])): ?>
+                                                        <a href="show_details.php?id=<?php echo $episode['series']['id']; ?>" class="episode-show-link">
+                                                            <div class="episode-show"><?php echo isset($episode['series']['title']) && $episode['series']['title'] !== 'Unknown Show' ? htmlspecialchars($episode['series']['title']) : htmlspecialchars($episode['seriesTitle'] ?? 'Unknown Show'); ?></div>
+                                                        </a>
+                                                        <?php else: ?>
+                                                        <div class="episode-show"><?php echo isset($episode['series']['title']) && $episode['series']['title'] !== 'Unknown Show' ? htmlspecialchars($episode['series']['title']) : htmlspecialchars($episode['seriesTitle'] ?? 'Unknown Show'); ?></div>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </div>
+                                            <?php endforeach; ?>
                                 </div>
                             <?php endif; ?>
                         </div>

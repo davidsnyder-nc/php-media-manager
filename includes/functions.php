@@ -1359,14 +1359,22 @@ function getSampleUpcomingEpisodes() {
         ]
     ];
     
-    // Add sample episodes for the next 14 days
-    for ($i = 0; $i < 15; $i++) {
-        // Create a more realistic lineup - not all shows air every day
-        if ($i % 2 == 0) {
-            // Skip days to make it more realistic
-            continue;
-        }
-        
+    // Set up some friendly date labels
+    $dateLabels = [
+        0 => 'Today',
+        1 => 'Tomorrow'
+    ];
+    
+    // Add days of the week for the next 5 days
+    $daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    for ($i = 2; $i < 7; $i++) {
+        $futureDate = clone $today;
+        $futureDate->modify('+' . $i . ' days');
+        $dateLabels[$i] = $daysOfWeek[$futureDate->format('w')];
+    }
+    
+    // Add sample episodes for the next 7 days
+    for ($i = 0; $i < 7; $i++) {
         $date = clone $today;
         $date->modify('+' . $i . ' days');
         
@@ -1386,6 +1394,7 @@ function getSampleUpcomingEpisodes() {
             'title' => 'Episode ' . $episode,
             'airDate' => $date->format('Y-m-d'),
             'airDateUtc' => $date->format('Y-m-d\TH:i:s\Z'),
+            'displayDate' => $dateLabels[$i] ?? date('M d', strtotime($date->format('Y-m-d'))),
             'series' => [
                 'id' => $show['id'],
                 'title' => $show['title'],

@@ -11,29 +11,28 @@ cat > release_notes.md << EOL
 
 ## What's New
 
-- **Front Page Improvements**:
-  - Fixed "Upcoming Episodes" section to fill the entire width of its container
-  - Changed "Recently Added" tabs to show "Recently Downloaded" content
-  - Added new functions to fetch and display recently downloaded content from SABnzbd
-  - Enhanced display of downloaded TV shows and movies on front page
+- **Demo Mode Improvements**:
+  - Enhanced demo mode to work without requiring any API configuration
+  - Fixed demo data handling in TV shows, movies, and downloads sections
+  - Added robust error handling for demo mode data
+  - Added new demo status page for checking configuration
+  - Fixed sorting functions to handle null values properly
 
-- **User Interface Improvements**:
-  - Added real-time SABnzbd queue auto-update functionality (refreshes every 10 seconds)
-  - Fixed button alignment on small displays
-  - Improved width handling for the 'Upcoming Episodes' section
-  - Enhanced AJAX-based queue management (pause, resume, delete) without page reloads
+- **Bug Fixes**:
+  - Fixed issues with TV show and movie detail pages in demo mode
+  - Improved error handling throughout the application
+  - Fixed display issues on smaller screens
+  - Corrected sorting functions for shows and movies
 
 - **Performance Enhancements**: 
-  - Added server-side image caching system to reduce API requests
-  - Implemented browser-side caching with proper cache headers
-  - Added lazy loading with IntersectionObserver to load images only when visible
-  - Applied GPU acceleration hints for smoother rendering
-  - Created image preloading for images that will soon enter the viewport
+  - Added more comprehensive error checking
+  - Optimized demo mode data handling
+  - Fixed array handling to prevent PHP warnings
 
-- **API Enhancements**:
-  - Added new API endpoint for retrieving SABnzbd queue data
-  - Added function to get recently downloaded content from SABnzbd history
-  - Improved error handling across all API endpoints
+- **Development Tools**:
+  - Added demo_status.php for checking demo mode configuration
+  - Added enable_demo_mode.php for directly enabling demo mode
+  - Enhanced error logging for easier debugging
 
 ## Files
 
