@@ -250,10 +250,13 @@ require_once 'includes/header.php';
                                             <div class="episode-info">
                                                 <?php if (isset($episode['series']['id'])): ?>
                                                 <a href="show_details.php?id=<?php echo $episode['series']['id']; ?>" class="episode-show-link">
-                                                    <div class="episode-show"><?php echo isset($episode['series']['title']) && $episode['series']['title'] !== 'Unknown Show' ? htmlspecialchars($episode['series']['title']) : htmlspecialchars($episode['seriesTitle'] ?? 'Unknown Show'); ?></div>
+                                                    <span class="episode-show"><?php echo isset($episode['series']['title']) && $episode['series']['title'] !== 'Unknown Show' ? htmlspecialchars($episode['series']['title']) : htmlspecialchars($episode['seriesTitle'] ?? 'Unknown Show'); ?></span>
                                                 </a>
                                                 <?php else: ?>
-                                                <div class="episode-show"><?php echo isset($episode['series']['title']) && $episode['series']['title'] !== 'Unknown Show' ? htmlspecialchars($episode['series']['title']) : htmlspecialchars($episode['seriesTitle'] ?? 'Unknown Show'); ?></div>
+                                                <span class="episode-show"><?php echo isset($episode['series']['title']) && $episode['series']['title'] !== 'Unknown Show' ? htmlspecialchars($episode['series']['title']) : htmlspecialchars($episode['seriesTitle'] ?? 'Unknown Show'); ?></span>
+                                                <?php endif; ?>
+                                                <?php if (isset($episode['seasonNumber']) && isset($episode['episodeNumber'])): ?>
+                                                <span class="episode-number text-muted ms-1">S<?php echo str_pad($episode['seasonNumber'], 2, '0', STR_PAD_LEFT); ?>E<?php echo str_pad($episode['episodeNumber'], 2, '0', STR_PAD_LEFT); ?></span>
                                                 <?php endif; ?>
                                             </div>
                                         </div>

@@ -73,6 +73,7 @@ body {
   width: 100%;
   display: flex;
   border-bottom: 1px solid var(--border-color);
+  margin-bottom: 15px;
 }
 
 .nav-tabs .nav-item {
@@ -86,10 +87,23 @@ body {
   border-radius: 0.25rem 0.25rem 0 0;
   margin-right: 0;
   border-bottom: 1px solid transparent;
+  padding: 0.5rem 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all 0.2s ease;
+}
+
+.nav-tabs .nav-link:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+  border-color: var(--border-color) var(--border-color) transparent;
 }
 
 .nav-tabs .nav-link.active {
   border-color: var(--border-color) var(--border-color) #fff;
+  background-color: #fff;
+  color: #007bff;
 }
 
 .tab-content {
@@ -97,6 +111,7 @@ body {
   border-top: none;
   padding: 15px;
   border-radius: 0 0 0.25rem 0.25rem;
+  background-color: #fff;
 }
 
 @media (min-width: 768px) {
@@ -335,14 +350,18 @@ body {
 }
 
 .episode-date {
-  min-width: 70px;
-  width: 70px;
+  min-width: 85px;
+  width: 85px;
   font-weight: 500;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .episode-info {
   flex: 1;
-  width: calc(100% - 80px);
+  padding-left: 10px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
