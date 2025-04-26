@@ -66,38 +66,35 @@ if ($demoMode || $hasAllSettings) {
     }
 
     // Get SABnzbd data
+    // Get download queue if SABnzbd settings are available
     if (!empty($settings['sabnzbd_url']) && !empty($settings['sabnzbd_api_key'])) {
         $sabnzbdData = getSabnzbdQueue($settings['sabnzbd_url'], $settings['sabnzbd_api_key'], $demoMode);
-        
-        // Get download history
-        $downloadHistory = getSabnzbdHistory($settings['sabnzbd_url'], $settings['sabnzbd_api_key'], 1, 12, $demoMode);
-        $historySlots = isset($downloadHistory['slots']) ? $downloadHistory['slots'] : [];
-        
-        // Process the recent downloads to match with shows/movies
-        $recentDownloads = processRecentDownloads(
-            $historySlots,
-            $sonarrData,
-            $radarrData,
-            $demoMode
-        );
     } elseif ($demoMode) {
         $sabnzbdData = getSampleSabnzbdQueue();
-        
-        // In demo mode, get sample data for shows, movies, and download history
-        $demoHistory = getSampleSabnzbdHistory(12);
-        $historySlots = isset($demoHistory['slots']) ? $demoHistory['slots'] : [];
-        
-        // Process the recent downloads using our sample data
-        $recentDownloads = processRecentDownloads(
-            $historySlots,
-            $sonarrData,
-            $radarrData,
-            true // force demo mode
-        );
     } else {
         $sabnzbdData = [];
-        $recentDownloads = [];
     }
+    
+    // Get recently downloaded TV shows directly from Sonarr
+    if (!empty($settings['sonarr_url']) && !empty($settings['sonarr_api_key'])) {
+        $recentTvShows = getRecentlyDownloadedTvShows($settings['sonarr_url'], $settings['sonarr_api_key'], 6, $demoMode);
+    } elseif ($demoMode) {
+        $recentTvShows = getRecentlyDownloadedTvShows('', '', 6, true);
+    } else {
+        $recentTvShows = [];
+    }
+    
+    // Get recently downloaded movies directly from Radarr
+    if (!empty($settings['radarr_url']) && !empty($settings['radarr_api_key'])) {
+        $recentMovies = getRecentlyDownloadedMovies($settings['radarr_url'], $settings['radarr_api_key'], 6, $demoMode);
+    } elseif ($demoMode) {
+        $recentMovies = getRecentlyDownloadedMovies('', '', 6, true);
+    } else {
+        $recentMovies = [];
+    }
+    
+    // Combine the recent downloads for any code still expecting the combined array
+    $recentDownloads = array_merge($recentTvShows, $recentMovies);
     
     // In demo mode, make sure we have all necessary data
     if ($demoMode) {
@@ -287,17 +284,11 @@ require_once 'includes/header.php';
                         <div class="tab-pane fade" id="tvshows" role="tabpanel" aria-labelledby="shows-tab">
                             <div class="media-grid">
                             <?php 
-                            // Filter TV shows from recent downloads
-                            $recentTvShows = array_filter($recentDownloads ?? [], function($item) {
-                                return $item['type'] === 'tv';
-                            });
-                            
                             if (empty($recentTvShows)):
                             ?>
                                 <div class="alert alert-info">No recently downloaded TV shows found</div>
                             <?php 
                             else:
-                                $recentTvShows = array_slice($recentTvShows, 0, 6);
                                 foreach ($recentTvShows as $download): 
                                     $hasImage = !empty($download['image']);
                                     $showTitle = !empty($download['clean_name']) ? $download['clean_name'] : $download['name'];
@@ -370,18 +361,12 @@ require_once 'includes/header.php';
                         <div class="tab-pane fade show active" id="recent-movies" role="tabpanel" aria-labelledby="recent-movies-tab">
                             <div class="media-grid">
                                 <?php 
-                                // Filter movies from recent downloads
-                                $recentMovieDownloads = array_filter($recentDownloads ?? [], function($item) {
-                                    return $item['type'] === 'movie';
-                                });
-                                
-                                if (empty($recentMovieDownloads)):
+                                if (empty($recentMovies)):
                                 ?>
                                     <div class="alert alert-info">No recently downloaded movies found</div>
                                 <?php 
                                 else:
-                                    $recentMovieDownloads = array_slice($recentMovieDownloads, 0, 6);
-                                    foreach ($recentMovieDownloads as $download): 
+                                    foreach ($recentMovies as $download): 
                                         $hasImage = !empty($download['image']);
                                         $movieTitle = !empty($download['clean_name']) ? $download['clean_name'] : $download['name'];
                                         $movieYear = isset($download['year']) ? ' (' . $download['year'] . ')' : '';

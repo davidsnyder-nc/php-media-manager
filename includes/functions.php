@@ -155,6 +155,140 @@ function getSonarrShows($url, $apiKey, $demoMode = false) {
 }
 
 /**
+ * Get recently downloaded TV shows from Sonarr
+ * 
+ * @param string $url Sonarr base URL
+ * @param string $apiKey Sonarr API key
+ * @param int $limit Maximum number of shows to return (default: 6)
+ * @param bool $demoMode Whether to use demo data when API is unavailable
+ * @return array Array of recently downloaded TV shows
+ */
+function getRecentlyDownloadedTvShows($url, $apiKey, $limit = 6, $demoMode = false) {
+    // Get the history from Sonarr API
+    $history = makeApiRequest($url, 'api/v3/history', [
+        'sortKey' => 'date',
+        'sortDir' => 'desc',
+        'pageSize' => 50  // Get enough history to find enough downloaded episodes
+    ], $apiKey);
+    
+    // If no data or API error and demo mode is enabled, return sample data
+    if ((!$history || !is_array($history) || empty($history['records'])) && $demoMode) {
+        $sampleShows = getSampleTvShows();
+        
+        // Convert sample shows to "downloaded" format
+        $recentShows = [];
+        foreach (array_slice($sampleShows, 0, $limit) as $index => $show) {
+            $date = new DateTime();
+            $date->modify('-' . rand(1, 10) . ' days');
+            
+            $recentShows[] = [
+                'id' => $show['id'] ?? $index,
+                'type' => 'tv',
+                'show_id' => $show['id'] ?? $index,
+                'clean_name' => $show['title'] ?? 'Unknown Show',
+                'name' => $show['title'] ?? 'Unknown Show',
+                'season' => rand(1, 3),
+                'episode' => rand(1, 12),
+                'episodes_count' => 1,
+                'image' => isset($show['images']) ? getPosterUrl($show['images']) : '',
+                'completed' => $date->format('Y-m-d\TH:i:s\Z')
+            ];
+        }
+        
+        return $recentShows;
+    }
+    
+    // If no valid data and not in demo mode, return empty array
+    if (!$history || !is_array($history) || empty($history['records'])) {
+        return [];
+    }
+    
+    // Get all shows for reference
+    $allShows = getSonarrShows($url, $apiKey, $demoMode);
+    $showsById = [];
+    
+    // Create a lookup table of shows by ID
+    if (is_array($allShows)) {
+        foreach ($allShows as $show) {
+            if (isset($show['id'])) {
+                $showsById[$show['id']] = $show;
+            }
+        }
+    }
+    
+    // Process Sonarr history to find downloaded episodes
+    $downloadedEpisodes = [];
+    $episodesByShowId = [];
+    
+    foreach ($history['records'] as $record) {
+        // Only include "grabbed" or "downloaded" events
+        if (isset($record['eventType']) && 
+            in_array($record['eventType'], ['downloadFolderImported', 'grabbed', 'episodeFileImported']) && 
+            isset($record['seriesId'])) {
+            
+            $seriesId = $record['seriesId'];
+            
+            // If we already have enough episodes for this show, skip
+            if (isset($episodesByShowId[$seriesId]) && $episodesByShowId[$seriesId] >= 3) {
+                continue;
+            }
+            
+            // If we have show metadata
+            if (isset($showsById[$seriesId])) {
+                $show = $showsById[$seriesId];
+                
+                // Initialize episode count for this show if not set
+                if (!isset($episodesByShowId[$seriesId])) {
+                    $episodesByShowId[$seriesId] = 0;
+                }
+                
+                // Increment episode count
+                $episodesByShowId[$seriesId]++;
+                
+                // Create a processed record
+                $processedRecord = [
+                    'id' => $record['id'],
+                    'type' => 'tv',
+                    'show_id' => $seriesId,
+                    'clean_name' => $show['title'] ?? 'Unknown Show',
+                    'name' => $show['title'] ?? 'Unknown Show',
+                    'completed' => $record['date'],
+                    'episodes_count' => $episodesByShowId[$seriesId],
+                    'image' => isset($show['images']) ? getPosterUrl($show['images']) : ''
+                ];
+                
+                // Add season/episode info if available
+                if (isset($record['seasonNumber'])) {
+                    $processedRecord['season'] = $record['seasonNumber'];
+                }
+                
+                if (isset($record['episodeNumber'])) {
+                    $processedRecord['episode'] = $record['episodeNumber'];
+                }
+                
+                // Only add if we don't already have this show, or replace if newer
+                $showTitle = strtolower($show['title'] ?? '');
+                if (!isset($downloadedEpisodes[$showTitle]) || 
+                    strtotime($record['date']) > strtotime($downloadedEpisodes[$showTitle]['completed'])) {
+                    $downloadedEpisodes[$showTitle] = $processedRecord;
+                }
+            }
+        }
+    }
+    
+    // Convert to simple array and sort by date
+    $result = array_values($downloadedEpisodes);
+    
+    // Sort by date (newest first)
+    usort($result, function($a, $b) {
+        return strtotime($b['completed']) - strtotime($a['completed']);
+    });
+    
+    // Limit results
+    return array_slice($result, 0, $limit);
+}
+
+/**
  * Get details for a specific TV show from Sonarr
  * 
  * @param string $url Sonarr base URL
@@ -388,6 +522,115 @@ function getRadarrMovies($url, $apiKey, $demoMode = false) {
         return getSampleMovies();
     }
     return $movies;
+}
+
+/**
+ * Get recently downloaded movies from Radarr
+ * 
+ * @param string $url Radarr base URL
+ * @param string $apiKey Radarr API key
+ * @param int $limit Maximum number of movies to return (default: 6)
+ * @param bool $demoMode Whether to use demo data when API is unavailable
+ * @return array Array of recently downloaded movies
+ */
+function getRecentlyDownloadedMovies($url, $apiKey, $limit = 6, $demoMode = false) {
+    // Get the history from Radarr API
+    $history = makeApiRequest($url, 'api/v3/history', [
+        'sortKey' => 'date',
+        'sortDir' => 'desc',
+        'pageSize' => 50 // Get enough history to find enough downloaded movies
+    ], $apiKey);
+    
+    // If no data or API error and demo mode is enabled, return sample data
+    if ((!$history || !is_array($history) || empty($history['records'])) && $demoMode) {
+        $sampleMovies = getSampleMovies();
+        
+        // Convert sample movies to "downloaded" format
+        $recentMovies = [];
+        foreach (array_slice($sampleMovies, 0, $limit) as $index => $movie) {
+            $date = new DateTime();
+            $date->modify('-' . rand(1, 10) . ' days');
+            
+            $recentMovies[] = [
+                'id' => $movie['id'] ?? $index,
+                'type' => 'movie',
+                'movie_id' => $movie['id'] ?? $index,
+                'clean_name' => $movie['title'] ?? 'Unknown Movie',
+                'name' => $movie['title'] ?? 'Unknown Movie',
+                'year' => $movie['year'] ?? date('Y'),
+                'image' => isset($movie['images']) ? getPosterUrl($movie['images']) : '',
+                'completed' => $date->format('Y-m-d\TH:i:s\Z')
+            ];
+        }
+        
+        return $recentMovies;
+    }
+    
+    // If no valid data and not in demo mode, return empty array
+    if (!$history || !is_array($history) || empty($history['records'])) {
+        return [];
+    }
+    
+    // Get all movies for reference
+    $allMovies = getRadarrMovies($url, $apiKey, $demoMode);
+    $moviesById = [];
+    
+    // Create a lookup table of movies by ID
+    if (is_array($allMovies)) {
+        foreach ($allMovies as $movie) {
+            if (isset($movie['id'])) {
+                $moviesById[$movie['id']] = $movie;
+            }
+        }
+    }
+    
+    // Process Radarr history to find downloaded movies
+    $downloadedMovies = [];
+    
+    foreach ($history['records'] as $record) {
+        // Only include "grabbed" or "downloaded" events
+        if (isset($record['eventType']) && 
+            in_array($record['eventType'], ['downloadFolderImported', 'grabbed', 'movieFileImported']) && 
+            isset($record['movieId'])) {
+            
+            $movieId = $record['movieId'];
+            
+            // If we have movie metadata
+            if (isset($moviesById[$movieId])) {
+                $movie = $moviesById[$movieId];
+                
+                // Create a processed record
+                $processedRecord = [
+                    'id' => $record['id'],
+                    'type' => 'movie',
+                    'movie_id' => $movieId,
+                    'clean_name' => $movie['title'] ?? 'Unknown Movie',
+                    'name' => $movie['title'] ?? 'Unknown Movie',
+                    'year' => $movie['year'] ?? '',
+                    'completed' => $record['date'],
+                    'image' => isset($movie['images']) ? getPosterUrl($movie['images']) : ''
+                ];
+                
+                // Only add if we don't already have this movie, or replace if newer
+                $movieTitle = strtolower($movie['title'] ?? '');
+                if (!isset($downloadedMovies[$movieTitle]) || 
+                    strtotime($record['date']) > strtotime($downloadedMovies[$movieTitle]['completed'])) {
+                    $downloadedMovies[$movieTitle] = $processedRecord;
+                }
+            }
+        }
+    }
+    
+    // Convert to simple array and sort by date
+    $result = array_values($downloadedMovies);
+    
+    // Sort by date (newest first)
+    usort($result, function($a, $b) {
+        return strtotime($b['completed']) - strtotime($a['completed']);
+    });
+    
+    // Limit results
+    return array_slice($result, 0, $limit);
 }
 
 /**
