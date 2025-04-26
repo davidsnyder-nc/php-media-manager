@@ -221,6 +221,18 @@ require_once 'includes/header.php';
                         <div class="tab-pane fade show active" id="episodes" role="tabpanel" aria-labelledby="episodes-tab">
                             <?php
                             $upcomingEpisodes = getUpcomingEpisodes($settings['sonarr_url'], $settings['sonarr_api_key'], $demoMode);
+                            
+                            // Debug output - remove after fixing
+                            if (!empty($upcomingEpisodes)) {
+                                echo "<!-- Debug: " . count($upcomingEpisodes) . " upcoming episodes found -->";
+                                echo "<!-- First episode: ";
+                                echo "Date: " . ($upcomingEpisodes[0]['displayDate'] ?? 'N/A') . ", ";
+                                echo "Show: " . ($upcomingEpisodes[0]['series']['title'] ?? $upcomingEpisodes[0]['seriesTitle'] ?? 'N/A');
+                                echo " -->";
+                            } else {
+                                echo "<!-- Debug: No upcoming episodes found -->";
+                            }
+                            
                             if (empty($upcomingEpisodes)): 
                             ?>
                                 <div class="alert alert-info">No upcoming episodes</div>
