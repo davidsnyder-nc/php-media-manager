@@ -264,11 +264,15 @@ require_once 'includes/header.php';
                                                     </div>
                                                 </div>
                                             <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
-                            <?php endif; ?>
+                            </div>
                         </div>
-                        <div class="tab-pane fade" id="shows" role="tabpanel" aria-labelledby="shows-tab">
-                            <div class="media-grid">
+                        <div class="col-md-6">
+                            <div class="tab-content">
+                                <div class="tab-pane fade show active" id="shows" role="tabpanel" aria-labelledby="shows-tab">
+                                    <div class="media-grid">
                                 <?php 
                                 // Filter TV shows from recent downloads
                                 $recentTvShows = array_filter($recentDownloads ?? [], function($item) {
@@ -324,6 +328,8 @@ require_once 'includes/header.php';
                                     endforeach;
                                 endif;
                                 ?>
+                            </div>
+                                </div>
                             </div>
                         </div>
                     </div>
